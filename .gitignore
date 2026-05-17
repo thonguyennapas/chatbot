@@ -1,0 +1,34 @@
+# Local secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Local runtime clones and generated service data
+runtime/
+
+# Local document corpus for the proof
+corpus/
+
+# Logs and evaluation scratch output
+*.log
+logs/
+tmp/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node modules and Next.js build
+node_modules/
+.next/
+out/
+build/
+.npm/
+
+# Agent framework
+.agent/
+.claude/
+.gemini/

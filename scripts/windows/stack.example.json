@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "runtimeRoot": "runtime/windows-stack",
+  "prerequisites": [
+    {
+      "name": "Node.js",
+      "commands": ["node", "npm.cmd"]
+    },
+    {
+      "name": "Corepack pnpm for Dify web",
+      "commands": ["corepack.cmd"]
+    },
+    {
+      "name": "uv for Dify/RAGFlow Python services",
+      "commands": ["uv"]
+    },
+    {
+      "name": "Python",
+      "commands": ["python"]
+    },
+    {
+      "name": "Dify native middleware",
+      "commands": ["postgres"]
+    },
+    {
+      "name": "RAGFlow native middleware",
+      "commands": ["mysqld", "minio"]
+    }
+  ],
+  "services": [
+    {
+      "name": "memurai-redis",
+      "type": "windows-service",
+      "enabled": false,
+      "description": "Redis-compatible Windows service detected on this machine. Can be used by Dify and RAGFlow after env/config points to 127.0.0.1:6379 and Redis passwords are aligned.",
+      "serviceName": "Memurai",
+      "port": 6379,
+      "startupTimeoutSeconds": 30
+    },
+    {
+      "name": "postgres",
+      "enabled": false,
+      "description": "Native Postgres for Dify. Initialize the data directory and dify database before enabling.",
+      "workingDirectory": ".",
+      "command": "postgres",
+      "arguments": ["-D", "runtime/windows-stack/data/postgres"],
+      "port": 5432,
+      "startupTimeoutSeconds": 60
+    },
+    {
+      "name": "qdrant",
+      "enabled": false,
+      "description": "Qdrant vector store for Dify. Run install-middleware.ps1 -Qdrant first. Set VECTOR_STORE=qdrant and QDRANT_URL=http://127.0.0.1:6333 in runtime/dify/api/.env.",
+      "workingDirectory": "runtime/windows-stack/data",
+      "command": "runtime/windows-stack/bin/qdrant/qdrant.exe",
+      "arguments": [],
+      "port": 6333,
+      "startupTimeoutSeconds": 30
+    },
+    {
+      "name": "dify-api",
+      "enabled": false,
+      "description": "Dify Flask API. Requires uv and configured api/.env.",
+      "workingDirectory": "runtime/dify/api",
+      "command": "powershell",
+      "arguments": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "uv run flask db upgrade; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; uv run flask run --host 127.0.0.1 --port 5001 --debug"
+      ],
+      "port": 5001,
+      "startupTimeoutSeconds": 90
+    },
+    {
+      "name": "dify-web",
+      "enabled": false,
+      "description": "Dify Next.js web app. Requires pnpm and web/.env.local.",
+      "workingDirectory": "runtime/dify/web",
+      "command": "corepack.cmd",
+      "arguments": ["pnpm", "dev"],
+      "port": 3000,
+      "startupTimeoutSeconds": 90
+    },
+    {
+      "name": "mysql",
+      "enabled": false,
+      "description": "Native MySQL for RAGFlow. Run setup-databases.ps1 -MySQL first to initialise the data directory and create rag_flow database.",
+      "workingDirectory": ".",
+      "command": "mysqld",
+      "arguments": ["--datadir=runtime/windows-stack/data/mysql", "--port=3306", "--console"],
+      "port": 3306,
+      "startupTimeoutSeconds": 60
+    },
+    {
+      "name": "elasticsearch",
+      "enabled": false,
+      "description": "Elasticsearch 8.11.3 for RAGFlow. Run install-middleware.ps1 -Elasticsearch first. Configure security/passwords to match runtime/ragflow/conf/service_conf.yaml before enabling.",
+      "workingDirectory": ".",
+      "command": "runtime/windows-stack/bin/elasticsearch/bin/elasticsearch.bat",
+      "arguments": [
+        "-Ehttp.port=1200",
+        "-Ediscovery.type=single-node",
+        "-Expack.security.http.ssl.enabled=false",
+        "-Expack.security.transport.ssl.enabled=false"
+      ],
+      "port": 1200,
+      "startupTimeoutSeconds": 120
+    },
+    {
+      "name": "minio",
+      "enabled": false,
+      "description": "Native MinIO object storage for RAGFlow. Configure root user/password to match runtime/ragflow/conf/service_conf.yaml before enabling.",
+      "workingDirectory": ".",
+      "command": "minio",
+      "arguments": ["server", "runtime/windows-stack/data/minio", "--console-address", ":9001"],
+      "port": 9000,
+      "startupTimeoutSeconds": 30
+    },
+    {
+      "name": "ragflow-api",
+      "enabled": false,
+      "description": "RAGFlow API server from source. Requires uv/python deps and service_conf.yaml.",
+      "workingDirectory": "runtime/ragflow",
+      "command": "powershell",
+      "arguments": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "$env:PYTHONPATH=(Get-Location).Path; python api/ragflow_server.py"
+      ],
+      "port": 9380,
+      "startupTimeoutSeconds": 120
+    },
+    {
+      "name": "ragflow-worker",
+      "enabled": false,
+      "description": "RAGFlow task executor from source.",
+      "workingDirectory": "runtime/ragflow",
+      "command": "powershell",
+      "arguments": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "$env:PYTHONPATH=(Get-Location).Path; python rag/svr/task_executor.py 0"
+      ],
+      "port": 0,
+      "startupTimeoutSeconds": 15
+    },
+    {
+      "name": "ragflow-web",
+      "enabled": false,
+      "description": "RAGFlow Vite web app.",
+      "workingDirectory": "runtime/ragflow/web",
+      "command": "npm.cmd",
+      "arguments": ["run", "dev", "--", "--host", "127.0.0.1", "--port", "8080"],
+      "port": 8080,
+      "startupTimeoutSeconds": 90
+    }
+  ],
+  "clean": {
+    "logGlobs": ["runtime/windows-stack/logs/*"],
+    "cacheGlobs": ["runtime/windows-stack/tmp/*"],
+    "dataGlobs": ["runtime/windows-stack/data/*"]
+  }
+}

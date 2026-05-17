@@ -1,0 +1,351 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* ── Design Tokens: Dark Theme (default) ── */
+[data-theme="dark"] {
+  --bg-primary: #0B0D13;
+  --bg-surface: #12141D;
+  --bg-surface-2: #1A1D2B;
+  --bg-surface-hover: #222639;
+  --border-color: #2A2D3A;
+  --border-color-subtle: #1E2130;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --accent-primary: #7C3AED;
+  --accent-primary-hover: #6D28D9;
+  --accent-secondary: #A78BFA;
+  --accent-cta: #06B6D4;
+  --accent-cta-hover: #0891B2;
+  --glass-bg: rgba(18, 20, 29, 0.8);
+  --glass-border: rgba(124, 58, 237, 0.15);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --input-bg: #12141D;
+  --input-border: #2A2D3A;
+  --input-focus-ring: rgba(124, 58, 237, 0.4);
+  --error-bg: rgba(239, 68, 68, 0.1);
+  --error-border: rgba(239, 68, 68, 0.3);
+  --error-text: #FCA5A5;
+  --success-bg: rgba(34, 197, 94, 0.1);
+  --success-text: #86EFAC;
+  --code-bg: #1E2130;
+  --scrollbar-thumb: #2A2D3A;
+  --scrollbar-track: transparent;
+  --sidebar-bg: #0D0F16;
+  --sidebar-active: rgba(124, 58, 237, 0.12);
+  --sidebar-hover: rgba(255, 255, 255, 0.04);
+  --user-msg-bg: #1A1D2B;
+  --assistant-msg-bg: transparent;
+  --orb-1: rgba(124, 58, 237, 0.15);
+  --orb-2: rgba(6, 182, 212, 0.1);
+  --orb-3: rgba(167, 139, 250, 0.08);
+  --skeleton-base: #1A1D2B;
+  --skeleton-shine: #222639;
+}
+
+/* ── Design Tokens: Light Theme ── */
+[data-theme="light"] {
+  --bg-primary: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-surface-2: #F1F5F9;
+  --bg-surface-hover: #E8ECF1;
+  --border-color: #E2E8F0;
+  --border-color-subtle: #F1F5F9;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --accent-primary: #7C3AED;
+  --accent-primary-hover: #6D28D9;
+  --accent-secondary: #A78BFA;
+  --accent-cta: #0891B2;
+  --accent-cta-hover: #0E7490;
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(124, 58, 237, 0.1);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --input-bg: #FFFFFF;
+  --input-border: #E2E8F0;
+  --input-focus-ring: rgba(124, 58, 237, 0.25);
+  --error-bg: rgba(239, 68, 68, 0.06);
+  --error-border: rgba(239, 68, 68, 0.2);
+  --error-text: #DC2626;
+  --success-bg: rgba(34, 197, 94, 0.06);
+  --success-text: #16A34A;
+  --code-bg: #F1F5F9;
+  --scrollbar-thumb: #CBD5E1;
+  --scrollbar-track: transparent;
+  --sidebar-bg: #FFFFFF;
+  --sidebar-active: rgba(124, 58, 237, 0.08);
+  --sidebar-hover: rgba(0, 0, 0, 0.03);
+  --user-msg-bg: #F1F5F9;
+  --assistant-msg-bg: transparent;
+  --orb-1: rgba(124, 58, 237, 0.08);
+  --orb-2: rgba(6, 182, 212, 0.06);
+  --orb-3: rgba(167, 139, 250, 0.05);
+  --skeleton-base: #E2E8F0;
+  --skeleton-shine: #F1F5F9;
+}
+
+/* ── Tailwind Theme Mapping ── */
+@theme inline {
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --color-background: var(--bg-primary);
+  --color-foreground: var(--text-primary);
+}
+
+/* ── Base Styles ── */
+* {
+  transition: background-color 200ms ease, border-color 200ms ease, color 150ms ease;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbar Styles ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ── Keyframe Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-dot {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -30px) scale(1.05); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ── Animation Utility Classes ── */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.35s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.3s ease-out forwards;
+}
+
+/* ── Typing Indicator ── */
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-secondary);
+  animation: pulse-dot 1.4s infinite ease-in-out;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* ── Skeleton Loading ── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base) 25%,
+    var(--skeleton-shine) 50%,
+    var(--skeleton-base) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+/* ── Glassmorphism Card ── */
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+}
+
+/* ── Floating Orbs (Login Background) ── */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+.orb-1 {
+  width: 400px;
+  height: 400px;
+  background: var(--orb-1);
+  animation: float 20s infinite ease-in-out;
+}
+.orb-2 {
+  width: 300px;
+  height: 300px;
+  background: var(--orb-2);
+  animation: float 25s infinite ease-in-out reverse;
+}
+.orb-3 {
+  width: 350px;
+  height: 350px;
+  background: var(--orb-3);
+  animation: float 22s infinite ease-in-out 3s;
+}
+
+/* ── Gradient Button ── */
+.btn-gradient {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-cta));
+  background-size: 200% 200%;
+  color: #FFFFFF;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 250ms ease;
+}
+.btn-gradient:hover {
+  background-position: 100% 0;
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.35);
+  transform: translateY(-1px);
+}
+.btn-gradient:active {
+  transform: translateY(0);
+}
+.btn-gradient:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Markdown Content Styles ── */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3 {
+  font-weight: 600;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  color: var(--text-primary);
+}
+.markdown-content h1 { font-size: 1.25rem; }
+.markdown-content h2 { font-size: 1.1rem; }
+.markdown-content h3 { font-size: 1rem; }
+
+.markdown-content p {
+  margin-bottom: 0.75em;
+  line-height: 1.7;
+}
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+.markdown-content li {
+  margin-bottom: 0.25em;
+  line-height: 1.6;
+}
+
+.markdown-content code:not(pre code) {
+  background: var(--code-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  color: var(--accent-secondary);
+}
+
+.markdown-content pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1em;
+  overflow-x: auto;
+  margin: 0.75em 0;
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+.markdown-content pre code {
+  background: none;
+  padding: 0;
+  color: var(--text-primary);
+}
+
+.markdown-content strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.markdown-content em {
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.markdown-content blockquote {
+  border-left: 3px solid var(--accent-primary);
+  padding-left: 1em;
+  margin: 0.75em 0;
+  color: var(--text-secondary);
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
