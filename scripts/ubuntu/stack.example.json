@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "runtimeRoot": "runtime/ubuntu-stack",
+  "prerequisites": [
+    {
+      "name": "Node.js",
+      "commands": ["node", "npm"]
+    },
+    {
+      "name": "Corepack pnpm for Dify web",
+      "commands": ["corepack"]
+    },
+    {
+      "name": "uv for Dify/RAGFlow Python services",
+      "commands": ["uv"]
+    },
+    {
+      "name": "Python",
+      "commands": ["python3"]
+    },
+    {
+      "name": "jq for parsing json",
+      "commands": ["jq"]
+    }
+  ],
+  "services": [
+    {
+      "name": "redis",
+      "enabled": false,
+      "description": "Native Redis via apt-get.",
+      "workingDirectory": ".",
+      "command": "redis-server",
+      "arguments": ["--port", "6379", "--bind", "127.0.0.1", "--save", "", "--appendonly", "no"],
+      "port": 6379,
+      "startupTimeoutSeconds": 15
+    },
+    {
+      "name": "postgres",
+      "enabled": false,
+      "description": "Native Postgres for Dify. Initialize the data directory and dify database before enabling.",
+      "workingDirectory": ".",
+      "command": "/usr/lib/postgresql/16/bin/postgres",
+      "arguments": ["-D", "runtime/ubuntu-stack/data/postgres", "-p", "5433"],
+      "port": 5433,
+      "startupTimeoutSeconds": 60
+    },
+    {
+      "name": "qdrant",
+      "enabled": false,
+      "description": "Qdrant vector store for Dify. Run install-middleware.sh --qdrant first. Set VECTOR_STORE=qdrant and QDRANT_URL=http://127.0.0.1:6333 in runtime/dify/api/.env.",
+      "workingDirectory": "runtime/ubuntu-stack/data",
+      "command": "../bin/qdrant/qdrant",
+      "arguments": ["--disable-telemetry"],
+      "port": 6333,
+      "startupTimeoutSeconds": 30
+    },
+    {
+      "name": "dify-api",
+      "enabled": false,
+      "description": "Dify Flask API. Requires uv and configured api/.env.",
+      "workingDirectory": "runtime/dify/api",
+      "command": "bash",
+      "arguments": [
+        "-c",
+        "uv run flask db upgrade && uv run flask run --host 127.0.0.1 --port 5001 --debug"
+      ],
+      "port": 5001,
+      "startupTimeoutSeconds": 90
+    },
+    {
+      "name": "dify-plugin-daemon",
+      "enabled": false,
+      "description": "Dify Plugin Daemon for v0.14+.",
+      "workingDirectory": ".",
+      "command": "bash",
+      "arguments": [
+        "-c",
+        "SERVER_PORT=5002 KEY=lYkiYYT6owG+71oLerGzA7GXCgOT++6ovaezWAjpCjf+Sjc3ZtU+qUEi MAX_EXECUTION_TIMEOUT=300 MAX_WORKERS=50 runtime/ubuntu-stack/bin/plugin-daemon/plugin-daemon"
+      ],
+      "port": 5002,
+      "startupTimeoutSeconds": 15
+    },
+    {
+      "name": "dify-web",
+      "enabled": false,
+      "description": "Dify Next.js web app. Requires pnpm and web/.env.local.",
+      "workingDirectory": "runtime/dify/web",
+      "command": "corepack",
+      "arguments": ["pnpm", "dev", "--port", "3001"],
+      "port": 3001,
+      "startupTimeoutSeconds": 90
+    },
+    {
+      "name": "mysql",
+      "enabled": false,
+      "description": "Native MySQL for RAGFlow.",
+      "workingDirectory": ".",
+      "command": "mysqld",
+      "arguments": ["--datadir=runtime/ubuntu-stack/data/mysql", "--port=3307"],
+      "port": 3307,
+      "startupTimeoutSeconds": 60
+    },
+    {
+      "name": "elasticsearch",
+      "enabled": false,
+      "description": "Elasticsearch 8.11.3 for RAGFlow.",
+      "workingDirectory": ".",
+      "command": "runtime/ubuntu-stack/bin/elasticsearch/bin/elasticsearch",
+      "arguments": [
+        "-Ehttp.port=1200",
+        "-Ediscovery.type=single-node",
+        "-Expack.security.http.ssl.enabled=false",
+        "-Expack.security.transport.ssl.enabled=false"
+      ],
+      "port": 1200,
+      "startupTimeoutSeconds": 120
+    },
+    {
+      "name": "minio",
+      "enabled": false,
+      "description": "Native MinIO object storage for RAGFlow.",
+      "workingDirectory": ".",
+      "command": "runtime/ubuntu-stack/bin/minio/minio",
+      "arguments": ["server", "runtime/ubuntu-stack/data/minio", "--console-address", ":9001"],
+      "port": 9000,
+      "startupTimeoutSeconds": 30
+    },
+    {
+      "name": "ragflow-api",
+      "enabled": false,
+      "description": "RAGFlow API server from source.",
+      "workingDirectory": "runtime/ragflow",
+      "command": "bash",
+      "arguments": [
+        "-c",
+        "PYTHONPATH=$(pwd) python3 api/ragflow_server.py"
+      ],
+      "port": 9380,
+      "startupTimeoutSeconds": 120
+    },
+    {
+      "name": "ragflow-worker",
+      "enabled": false,
+      "description": "RAGFlow task executor from source.",
+      "workingDirectory": "runtime/ragflow",
+      "command": "bash",
+      "arguments": [
+        "-c",
+        "PYTHONPATH=$(pwd) python3 rag/svr/task_executor.py 0"
+      ],
+      "port": 0,
+      "startupTimeoutSeconds": 15
+    },
+    {
+      "name": "ragflow-web",
+      "enabled": false,
+      "description": "RAGFlow Vite web app.",
+      "workingDirectory": "runtime/ragflow/web",
+      "command": "npm",
+      "arguments": ["run", "dev", "--", "--host", "127.0.0.1", "--port", "8080"],
+      "port": 8080,
+      "startupTimeoutSeconds": 90
+    }
+  ],
+  "clean": {
+    "logGlobs": ["runtime/ubuntu-stack/logs/*"],
+    "cacheGlobs": ["runtime/ubuntu-stack/tmp/*"],
+    "dataGlobs": ["runtime/ubuntu-stack/data/*"]
+  }
+}
