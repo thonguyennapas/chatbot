@@ -42,26 +42,28 @@ MYSQL_DATA="$RUNTIME_ROOT/data/mysql"
 if command -v mysqld >/dev/null 2>&1 && [ ! -d "$MYSQL_DATA" ]; then
     echo "Initializing MySQL data directory at $MYSQL_DATA"
     
-    # Fix Ubuntu AppArmor blocking MySQL from writing to custom directories
+    # 1. Temporarily disable AppArmor for mysqld so it can create the directory
     if command -v apparmor_parser >/dev/null 2>&1; then
-        LOCAL_AA="/etc/apparmor.d/local/usr.sbin.mysqld"
-        if [ -f "/etc/apparmor.d/usr.sbin.mysqld" ]; then
-            mkdir -p /etc/apparmor.d/local
-            touch "$LOCAL_AA"
-            if ! grep -q "$MYSQL_DATA" "$LOCAL_AA"; then
-                echo "Updating AppArmor to allow MySQL access to $MYSQL_DATA"
-                echo "$MYSQL_DATA/ r," >> "$LOCAL_AA"
-                echo "$MYSQL_DATA/** rwk," >> "$LOCAL_AA"
-                apparmor_parser -r /etc/apparmor.d/usr.sbin.mysqld || true
-            fi
-        fi
+        echo "Temporarily disabling AppArmor for mysqld..."
+        mkdir -p /etc/apparmor.d/disable
+        ln -sf /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/
+        apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld || true
     fi
 
-    # Run as root so it can create the directory inside data/, avoiding permission denied.
-    # Then change ownership to mysql so the actual service can run it later.
+    # 2. Run initialization (mysqld MUST create the directory itself, so we ensure it doesn't exist)
     rm -rf "$MYSQL_DATA"
     mysqld --initialize-insecure --user=root --datadir="$MYSQL_DATA"
     chown -R mysql:mysql "$MYSQL_DATA"
+
+    # 3. Re-enable AppArmor and add an alias so it works during runtime
+    if command -v apparmor_parser >/dev/null 2>&1; then
+        echo "Re-enabling AppArmor with alias..."
+        rm -f /etc/apparmor.d/disable/usr.sbin.mysqld
+        if ! grep -q "$MYSQL_DATA" /etc/apparmor.d/tunables/alias; then
+            echo "alias /var/lib/mysql/ -> $MYSQL_DATA/," >> /etc/apparmor.d/tunables/alias
+        fi
+        systemctl restart apparmor || true
+    fi
 else
     echo "MySQL data directory already initialized or mysqld not found."
 fi
