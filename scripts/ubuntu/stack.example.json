@@ -160,6 +160,16 @@
       "arguments": ["run", "dev", "--", "--host", "127.0.0.1", "--port", "8080"],
       "port": 8080,
       "startupTimeoutSeconds": 90
+    },
+    {
+      "name": "chatbot-frontend",
+      "enabled": true,
+      "description": "Custom Next.js Chatbot Frontend.",
+      "workingDirectory": "frontend",
+      "command": "npm",
+      "arguments": ["run", "dev", "--", "--port", "3000"],
+      "port": 3000,
+      "startupTimeoutSeconds": 90
     }
   ],
   "clean": {
