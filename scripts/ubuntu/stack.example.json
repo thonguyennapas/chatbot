@@ -39,8 +39,11 @@
       "enabled": true,
       "description": "Native Postgres for Dify. Initialize the data directory and dify database before enabling.",
       "workingDirectory": ".",
-      "command": "/usr/lib/postgresql/16/bin/postgres",
-      "arguments": ["-D", "runtime/ubuntu-stack/data/postgres", "-p", "5433"],
+      "command": "bash",
+      "arguments": [
+        "-c",
+        "PG_VER=$(ls /usr/lib/postgresql/ | sort -n | tail -1); su postgres -c \"/usr/lib/postgresql/$PG_VER/bin/postgres -D runtime/ubuntu-stack/data/postgres -p 5433\""
+      ],
       "port": 5433,
       "startupTimeoutSeconds": 60
     },
@@ -96,7 +99,7 @@
       "description": "Native MySQL for RAGFlow.",
       "workingDirectory": ".",
       "command": "mysqld",
-      "arguments": ["--datadir=runtime/ubuntu-stack/data/mysql", "--port=3307"],
+      "arguments": ["--datadir=runtime/ubuntu-stack/data/mysql", "--port=3307", "--user=mysql"],
       "port": 3307,
       "startupTimeoutSeconds": 60
     },
@@ -105,12 +108,10 @@
       "enabled": true,
       "description": "Elasticsearch 8.11.3 for RAGFlow.",
       "workingDirectory": ".",
-      "command": "runtime/ubuntu-stack/bin/elasticsearch/bin/elasticsearch",
+      "command": "bash",
       "arguments": [
-        "-Ehttp.port=1200",
-        "-Ediscovery.type=single-node",
-        "-Expack.security.http.ssl.enabled=false",
-        "-Expack.security.transport.ssl.enabled=false"
+        "-c",
+        "chown -R daemon:daemon runtime/ubuntu-stack/bin/elasticsearch && su daemon -s /bin/bash -c \"runtime/ubuntu-stack/bin/elasticsearch/bin/elasticsearch -Ehttp.port=1200 -Ediscovery.type=single-node -Expack.security.http.ssl.enabled=false -Expack.security.transport.ssl.enabled=false\""
       ],
       "port": 1200,
       "startupTimeoutSeconds": 120
