@@ -68,6 +68,23 @@ else
 fi
 
 echo ""
+echo "Checking Runtime Source Code (Dify & RAGFlow)..."
+
+if [ ! -d "$REPO_ROOT/runtime/dify" ]; then
+    echo "Cloning Dify..."
+    git clone https://github.com/langgenius/dify.git "$REPO_ROOT/runtime/dify"
+else
+    echo "  OK      Dify source code exists."
+fi
+
+if [ ! -d "$REPO_ROOT/runtime/ragflow" ]; then
+    echo "Cloning RAGFlow..."
+    git clone https://github.com/infiniflow/ragflow.git "$REPO_ROOT/runtime/ragflow"
+else
+    echo "  OK      RAGFlow source code exists."
+fi
+
+echo ""
 echo "Next commands:"
 echo "  ./scripts/ubuntu/status-stack.sh"
 echo "  ./scripts/ubuntu/start-stack.sh"
