@@ -41,8 +41,8 @@ fi
 MYSQL_DATA="$RUNTIME_ROOT/data/mysql"
 if command -v mysqld >/dev/null 2>&1 && [ ! -d "$MYSQL_DATA" ]; then
     echo "Initializing MySQL data directory at $MYSQL_DATA"
-    mkdir -p "$MYSQL_DATA"
-    chown -R mysql:mysql "$MYSQL_DATA"
+    # Do NOT pre-create the directory, mysqld will create it and set permissions.
+    # Pre-creating it causes "OS errno 17 - File exists" on newer MySQL versions.
     mysqld --initialize-insecure --user=mysql --datadir="$MYSQL_DATA"
 else
     echo "MySQL data directory already initialized or mysqld not found."
