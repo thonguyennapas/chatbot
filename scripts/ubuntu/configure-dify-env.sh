@@ -38,4 +38,18 @@ if [ ! -f "$WEB_ENV" ] && [ -f "$WEB_EXAMPLE" ]; then
     sed -i 's/^NEXT_PUBLIC_PUBLIC_API_PREFIX=.*/NEXT_PUBLIC_PUBLIC_API_PREFIX=http:\/\/127.0.0.1:5001\/api/' "$WEB_ENV"
 fi
 
-echo "Dify env configuration complete."
+# Configure Chatbot Frontend env
+FRONTEND_ENV="$REPO_ROOT/frontend/.env.local"
+FRONTEND_EXAMPLE="$REPO_ROOT/frontend/.env.local.example"
+
+if [ ! -f "$FRONTEND_ENV" ] && [ -f "$FRONTEND_EXAMPLE" ]; then
+    echo "Creating frontend/.env.local"
+    cp "$FRONTEND_EXAMPLE" "$FRONTEND_ENV"
+    
+    # Generate a random 32-byte base64 string for SESSION_SECRET
+    RANDOM_SECRET=$(openssl rand -base64 32)
+    # Use | as delimiter for sed to avoid issues with / or + in base64
+    sed -i "s|^SESSION_SECRET=.*|SESSION_SECRET=${RANDOM_SECRET}|" "$FRONTEND_ENV"
+fi
+
+echo "Environment configuration complete."
