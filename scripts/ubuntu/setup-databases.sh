@@ -42,7 +42,8 @@ MYSQL_DATA="$RUNTIME_ROOT/data/mysql"
 if command -v mysqld >/dev/null 2>&1 && [ ! -d "$MYSQL_DATA" ]; then
     echo "Initializing MySQL data directory at $MYSQL_DATA"
     mkdir -p "$MYSQL_DATA"
-    mysqld --initialize-insecure --datadir="$MYSQL_DATA"
+    chown -R mysql:mysql "$MYSQL_DATA"
+    mysqld --initialize-insecure --user=mysql --datadir="$MYSQL_DATA"
 else
     echo "MySQL data directory already initialized or mysqld not found."
 fi
