@@ -14,14 +14,25 @@ PG_DATA="$RUNTIME_ROOT/data/postgres"
 
 if [ -x "$INITDB_CMD" ] && [ ! -d "$PG_DATA" ]; then
     echo "Initializing Postgres data directory at $PG_DATA"
-    "$INITDB_CMD" -D "$PG_DATA" --auth-host=trust --auth-local=trust
+    mkdir -p "$PG_DATA"
+    chown -R postgres:postgres "$PG_DATA"
+    
+    # Ensure parent directories are traversable by the postgres user
+    # This is required if the repository is cloned inside /root/
+    DIR="$PG_DATA"
+    while [ "$DIR" != "/" ]; do
+        chmod o+x "$DIR"
+        DIR=$(dirname "$DIR")
+    done
+
+    su postgres -c "$INITDB_CMD -D \"$PG_DATA\" --auth-host=trust --auth-local=trust"
     
     # Start it temporarily to create db
     echo "Creating dify database..."
-    "/usr/lib/postgresql/$PG_VER/bin/pg_ctl" -D "$PG_DATA" -o "-p 5433" start
+    su postgres -c "\"/usr/lib/postgresql/$PG_VER/bin/pg_ctl\" -D \"$PG_DATA\" -o \"-p 5433\" start"
     sleep 3
-    "/usr/lib/postgresql/$PG_VER/bin/createdb" -p 5433 dify || true
-    "/usr/lib/postgresql/$PG_VER/bin/pg_ctl" -D "$PG_DATA" stop
+    su postgres -c "\"/usr/lib/postgresql/$PG_VER/bin/createdb\" -p 5433 dify || true"
+    su postgres -c "\"/usr/lib/postgresql/$PG_VER/bin/pg_ctl\" -D \"$PG_DATA\" stop"
 else
     echo "Postgres data directory already initialized or initdb not found."
 fi
