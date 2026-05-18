@@ -41,6 +41,22 @@ fi
 MYSQL_DATA="$RUNTIME_ROOT/data/mysql"
 if command -v mysqld >/dev/null 2>&1 && [ ! -d "$MYSQL_DATA" ]; then
     echo "Initializing MySQL data directory at $MYSQL_DATA"
+    
+    # Fix Ubuntu AppArmor blocking MySQL from writing to custom directories
+    if command -v apparmor_parser >/dev/null 2>&1; then
+        LOCAL_AA="/etc/apparmor.d/local/usr.sbin.mysqld"
+        if [ -f "/etc/apparmor.d/usr.sbin.mysqld" ]; then
+            mkdir -p /etc/apparmor.d/local
+            touch "$LOCAL_AA"
+            if ! grep -q "$MYSQL_DATA" "$LOCAL_AA"; then
+                echo "Updating AppArmor to allow MySQL access to $MYSQL_DATA"
+                echo "$MYSQL_DATA/ r," >> "$LOCAL_AA"
+                echo "$MYSQL_DATA/** rwk," >> "$LOCAL_AA"
+                apparmor_parser -r /etc/apparmor.d/usr.sbin.mysqld || true
+            fi
+        fi
+    fi
+
     # Run as root so it can create the directory inside data/, avoiding permission denied.
     # Then change ownership to mysql so the actual service can run it later.
     rm -rf "$MYSQL_DATA"
