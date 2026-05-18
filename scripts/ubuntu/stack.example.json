@@ -26,7 +26,7 @@
   "services": [
     {
       "name": "redis",
-      "enabled": false,
+      "enabled": true,
       "description": "Native Redis via apt-get.",
       "workingDirectory": ".",
       "command": "redis-server",
@@ -36,7 +36,7 @@
     },
     {
       "name": "postgres",
-      "enabled": false,
+      "enabled": true,
       "description": "Native Postgres for Dify. Initialize the data directory and dify database before enabling.",
       "workingDirectory": ".",
       "command": "/usr/lib/postgresql/16/bin/postgres",
@@ -46,7 +46,7 @@
     },
     {
       "name": "qdrant",
-      "enabled": false,
+      "enabled": true,
       "description": "Qdrant vector store for Dify. Run install-middleware.sh --qdrant first. Set VECTOR_STORE=qdrant and QDRANT_URL=http://127.0.0.1:6333 in runtime/dify/api/.env.",
       "workingDirectory": "runtime/ubuntu-stack/data",
       "command": "../bin/qdrant/qdrant",
@@ -56,7 +56,7 @@
     },
     {
       "name": "dify-api",
-      "enabled": false,
+      "enabled": true,
       "description": "Dify Flask API. Requires uv and configured api/.env.",
       "workingDirectory": "runtime/dify/api",
       "command": "bash",
@@ -69,7 +69,7 @@
     },
     {
       "name": "dify-plugin-daemon",
-      "enabled": false,
+      "enabled": true,
       "description": "Dify Plugin Daemon for v0.14+.",
       "workingDirectory": ".",
       "command": "bash",
@@ -82,7 +82,7 @@
     },
     {
       "name": "dify-web",
-      "enabled": false,
+      "enabled": true,
       "description": "Dify Next.js web app. Requires pnpm and web/.env.local.",
       "workingDirectory": "runtime/dify/web",
       "command": "corepack",
@@ -92,7 +92,7 @@
     },
     {
       "name": "mysql",
-      "enabled": false,
+      "enabled": true,
       "description": "Native MySQL for RAGFlow.",
       "workingDirectory": ".",
       "command": "mysqld",
@@ -102,7 +102,7 @@
     },
     {
       "name": "elasticsearch",
-      "enabled": false,
+      "enabled": true,
       "description": "Elasticsearch 8.11.3 for RAGFlow.",
       "workingDirectory": ".",
       "command": "runtime/ubuntu-stack/bin/elasticsearch/bin/elasticsearch",
@@ -117,7 +117,7 @@
     },
     {
       "name": "minio",
-      "enabled": false,
+      "enabled": true,
       "description": "Native MinIO object storage for RAGFlow.",
       "workingDirectory": ".",
       "command": "runtime/ubuntu-stack/bin/minio/minio",
@@ -127,7 +127,7 @@
     },
     {
       "name": "ragflow-api",
-      "enabled": false,
+      "enabled": true,
       "description": "RAGFlow API server from source.",
       "workingDirectory": "runtime/ragflow",
       "command": "bash",
@@ -140,7 +140,7 @@
     },
     {
       "name": "ragflow-worker",
-      "enabled": false,
+      "enabled": true,
       "description": "RAGFlow task executor from source.",
       "workingDirectory": "runtime/ragflow",
       "command": "bash",
@@ -153,7 +153,7 @@
     },
     {
       "name": "ragflow-web",
-      "enabled": false,
+      "enabled": true,
       "description": "RAGFlow Vite web app.",
       "workingDirectory": "runtime/ragflow/web",
       "command": "npm",
