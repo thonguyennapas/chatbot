@@ -42,7 +42,7 @@
       "command": "bash",
       "arguments": [
         "-c",
-        "PG_VER=$(ls /usr/lib/postgresql/ | sort -n | tail -1); su postgres -c \"/usr/lib/postgresql/$PG_VER/bin/postgres -D runtime/ubuntu-stack/data/postgres -p 5433\""
+        "PG_VER=$(ls /usr/lib/postgresql/ | sort -n | tail -1); su postgres -c \"/usr/lib/postgresql/$PG_VER/bin/postgres -D $(pwd)/runtime/ubuntu-stack/data/postgres -p 5433\""
       ],
       "port": 5433,
       "startupTimeoutSeconds": 60
@@ -98,8 +98,11 @@
       "enabled": true,
       "description": "Native MySQL for RAGFlow.",
       "workingDirectory": ".",
-      "command": "mysqld",
-      "arguments": ["--datadir=runtime/ubuntu-stack/data/mysql", "--port=3307", "--user=mysql"],
+      "command": "bash",
+      "arguments": [
+        "-c",
+        "mysqld --datadir=$(pwd)/runtime/ubuntu-stack/data/mysql --port=3307 --user=mysql"
+      ],
       "port": 3307,
       "startupTimeoutSeconds": 60
     },
@@ -111,7 +114,7 @@
       "command": "bash",
       "arguments": [
         "-c",
-        "chown -R daemon:daemon runtime/ubuntu-stack/bin/elasticsearch && su daemon -s /bin/bash -c \"runtime/ubuntu-stack/bin/elasticsearch/bin/elasticsearch -Ehttp.port=1200 -Ediscovery.type=single-node -Expack.security.http.ssl.enabled=false -Expack.security.transport.ssl.enabled=false\""
+        "chown -R daemon:daemon $(pwd)/runtime/ubuntu-stack/bin/elasticsearch && su daemon -s /bin/bash -c \"$(pwd)/runtime/ubuntu-stack/bin/elasticsearch/bin/elasticsearch -Ehttp.port=1200 -Ediscovery.type=single-node -Expack.security.http.ssl.enabled=false -Expack.security.transport.ssl.enabled=false\""
       ],
       "port": 1200,
       "startupTimeoutSeconds": 120
