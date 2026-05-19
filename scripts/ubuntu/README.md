@@ -2,7 +2,21 @@
 
 Bộ công cụ này giúp bạn triển khai toàn bộ dự án (Dify, RAGFlow, Frontend) trực tiếp trên máy chủ Ubuntu mà **không cần sử dụng Docker**, giúp tối ưu hóa hiệu năng phần cứng.
 
-## 1. Chuẩn bị
+## 1. Yêu cầu hệ thống
+
+| Phần mềm | Phiên bản tối thiểu | Cách kiểm tra |
+|---|---|---|
+| Ubuntu | 22.04+ | `lsb_release -a` |
+| Node.js | 18+ | `node -v` |
+| Python | 3.10+ | `python3 --version` |
+| Go | 1.22+ | `go version` |
+| jq | bất kỳ | `jq --version` |
+| uv | bất kỳ | `uv --version` |
+| corepack | bất kỳ | `corepack --version` |
+
+> **Quan trọng:** Go là bắt buộc vì Dify Plugin Daemon phải được **build từ source code** (binary release trên GitHub chỉ là CLI tool, không phải server daemon).
+
+## 2. Chuẩn bị
 
 Trước khi chạy bất cứ thứ gì, bạn cần cấp quyền thực thi cho toàn bộ các script trong thư mục này:
 
@@ -10,7 +24,7 @@ Trước khi chạy bất cứ thứ gì, bạn cần cấp quyền thực thi c
 chmod +x scripts/ubuntu/*.sh
 ```
 
-## 2. Công cụ Quản lý Tập trung (`manage.sh`)
+## 3. Công cụ Quản lý Tập trung (`manage.sh`)
 
 Thay vì phải chạy từng script đơn lẻ, mọi thao tác điều khiển hệ thống đều được gói gọn trong công cụ `manage.sh`.
 
@@ -24,6 +38,15 @@ Lệnh này sẽ tự động tải các phần mềm phụ trợ (PostgreSQL, R
 
 > **Tính năng Resume (Lưu trạng thái):** 
 > Nếu quá trình cài đặt bị gián đoạn (ví dụ: rớt mạng khi đang tải), bạn chỉ cần chạy lại lệnh trên. Hệ thống sẽ đọc file trạng thái ngầm và **chạy tiếp từ đúng bước bị lỗi** thay vì phải cài lại từ đầu.
+
+**Pipeline cài đặt gồm 4 bước:**
+
+| Bước | Script | Mô tả |
+|---|---|---|
+| 1. bootstrap | `bootstrap.sh` | Tạo thư mục runtime, copy config, clone source Dify & RAGFlow |
+| 2. middleware | `install-middleware.sh` | Cài PostgreSQL, Redis, MySQL, tải Qdrant/MinIO/ES, **build Plugin Daemon từ source** |
+| 3. databases | `setup-databases.sh` | Khởi tạo data directory, tạo database `dify` và `dify_plugin` |
+| 4. env | `configure-dify-env.sh` | Tạo file `.env` cho Dify API, Dify Web, Plugin Daemon, Frontend |
 
 ### Khởi động & Tắt hệ thống
 
@@ -58,7 +81,38 @@ Trong quá trình phát triển, nếu hệ thống bị treo hoặc bạn muố
   ```
   *Tác dụng:* Xóa sạch toàn bộ Database (Postgres, Qdrant), file tạm, log và xóa luôn bộ nhớ trạng thái cài đặt. Dùng khi bạn muốn **Reset dự án về trạng thái như mới tải về**.
 
-## 3. Xử lý sự cố thường gặp
+## 4. Kiến trúc dịch vụ
+
+Khi chạy `manage.sh start`, các service được khởi động theo thứ tự sau (định nghĩa trong `stack.local.json`):
+
+| Service | Port | Mô tả |
+|---|---|---|
+| redis | 6379 | Cache & message broker |
+| postgres | 5433 | Database chính (Dify + Plugin Daemon) |
+| qdrant | 6333 | Vector store cho Dify |
+| dify-api | 5001 | Dify Flask API server |
+| dify-plugin-daemon | 5002 | Quản lý plugin, build từ source (`cmd/server/main.go`) |
+| dify-web | 3001 | Dify Next.js frontend |
+| mysql | 3307 | Database cho RAGFlow |
+| elasticsearch | 1200 | Full-text search cho RAGFlow |
+| minio | 9000 | Object storage cho RAGFlow |
+| ragflow-api | 9380 | RAGFlow API server |
+| ragflow-worker | — | RAGFlow task executor |
+| ragflow-web | 8080 | RAGFlow Vite frontend |
+| chatbot-frontend | 3000 | Custom chatbot Next.js frontend |
+
+### Về Dify Plugin Daemon
+
+Plugin Daemon là thành phần quản lý vòng đời plugin cho Dify v0.14+. Có 2 binary riêng biệt:
+
+- **`plugin-daemon-server`** — Server daemon thực sự, được build từ `cmd/server/main.go`. Đây là process chạy lắng nghe trên port 5002.
+- **`plugin-daemon-cli`** — CLI tool dùng để chạy database migration (`migrate`), quản lý plugin. Đây là binary có trên GitHub Releases nhưng **KHÔNG phải server**.
+
+Khi start, hệ thống sẽ tự động chạy `plugin-daemon-cli migrate` trước, sau đó `exec plugin-daemon-server`.
+
+File cấu hình `.env` tại `runtime/ubuntu-stack/plugin-daemon.env` được tự động tạo bởi `configure-dify-env.sh`, bao gồm kết nối PostgreSQL (database `dify_plugin`, port 5433), Redis, và Dify Inner API.
+
+## 5. Xử lý sự cố thường gặp
 
 ### dify-api không khởi động được (port 5001 timeout)
 
@@ -95,30 +149,71 @@ cd ~/chatbot
 
 **Triệu chứng:**
 ```
-Error: Service 'dify-plugin-daemon' did not open port 5002 within 15 seconds.
+Error: Service 'dify-plugin-daemon' did not open port 5002 within 60 seconds.
 ```
 
-**Bước 1: Kiểm tra log lỗi**
+Khi service bị timeout, hệ thống sẽ tự động in ra 10 dòng log lỗi cuối cùng. Dựa vào đó để xử lý:
+
+**Trường hợp 1: `unknown command "server"`**
+
+Binary đang dùng là CLI tool thay vì server. Cần build lại:
+```bash
+rm -rf runtime/ubuntu-stack/bin/plugin-daemon
+sudo ./scripts/ubuntu/install-middleware.sh
+```
+
+**Trường hợp 2: Database connection error**
+
+Đảm bảo database `dify_plugin` đã tồn tại:
+```bash
+su postgres -c "createdb -p 5433 dify_plugin" 2>/dev/null || echo "DB already exists"
+```
+
+**Trường hợp 3: File `.env` chưa được tạo**
+
+```bash
+rm -f runtime/ubuntu-stack/plugin-daemon.env
+./scripts/ubuntu/configure-dify-env.sh
+```
+
+**Trường hợp 4: Kiểm tra log chi tiết**
 ```bash
 tail -30 ~/chatbot/runtime/ubuntu-stack/logs/dify-plugin-daemon.err.log
 tail -30 ~/chatbot/runtime/ubuntu-stack/logs/dify-plugin-daemon.out.log
 ```
 
-**Bước 2: Nếu log không có lỗi rõ ràng** — có thể do timeout quá ngắn (mặc định 15s). Mở file `runtime/ubuntu-stack/stack.local.json`, tìm service `dify-plugin-daemon` và tăng `startupTimeoutSeconds` lên `30` hoặc `60`:
+### Cập nhật config sau khi thay đổi script
 
-```json
-{
-  "name": "dify-plugin-daemon",
-  "startupTimeoutSeconds": 30
-}
+Nếu bạn sửa file `stack.example.json`, cần ghi đè lại config local:
+```bash
+./scripts/ubuntu/bootstrap.sh --overwrite-config
 ```
 
-Sau đó khởi động lại:
-```bash
-./scripts/ubuntu/manage.sh start
-```
+## 6. Cấu trúc thư mục Runtime
 
-**Bước 3: Nếu log báo lỗi `KEY` hoặc `permission denied`** — kiểm tra binary plugin-daemon có quyền thực thi:
-```bash
-chmod +x ~/chatbot/runtime/ubuntu-stack/bin/plugin-daemon/plugin-daemon
+```
+runtime/
+├── dify/                          # Source code Dify (git clone)
+│   ├── api/.env                   # Cấu hình Dify API
+│   └── web/.env.local             # Cấu hình Dify Web
+├── ragflow/                       # Source code RAGFlow (git clone)
+└── ubuntu-stack/
+    ├── stack.local.json           # Config dịch vụ (copy từ stack.example.json)
+    ├── plugin-daemon.env          # Cấu hình Plugin Daemon
+    ├── .install_state             # File trạng thái cài đặt (resume)
+    ├── bin/
+    │   ├── plugin-daemon/
+    │   │   ├── plugin-daemon-server  # Server binary (build từ source)
+    │   │   └── plugin-daemon-cli     # CLI binary (build từ source)
+    │   ├── qdrant/
+    │   ├── minio/
+    │   └── elasticsearch/
+    ├── src/
+    │   └── dify-plugin-daemon/    # Source code plugin daemon (git clone)
+    ├── data/
+    │   ├── postgres/
+    │   ├── mysql/
+    │   └── plugin-daemon/         # Storage cho plugin daemon
+    ├── logs/                      # Log output của các service
+    └── pids/                      # PID files
 ```
