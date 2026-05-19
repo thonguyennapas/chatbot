@@ -88,10 +88,10 @@
       "enabled": true,
       "description": "Dify Next.js web app. Requires pnpm and web/.env.local.",
       "workingDirectory": "runtime/dify/web",
-      "command": "corepack",
-      "arguments": ["pnpm", "dev", "--port", "3001"],
+      "command": "bash",
+      "arguments": ["-c", "corepack pnpm install --frozen-lockfile && exec corepack pnpm dev --port 3001"],
       "port": 3001,
-      "startupTimeoutSeconds": 90
+      "startupTimeoutSeconds": 300
     },
     {
       "name": "mysql",
