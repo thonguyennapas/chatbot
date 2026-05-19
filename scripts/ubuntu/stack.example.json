@@ -4,23 +4,34 @@
   "prerequisites": [
     {
       "name": "Node.js",
-      "commands": ["node", "npm"]
+      "commands": [
+        "node",
+        "npm"
+      ]
     },
     {
       "name": "Corepack pnpm for Dify web",
-      "commands": ["corepack"]
+      "commands": [
+        "corepack"
+      ]
     },
     {
       "name": "uv for Dify/RAGFlow Python services",
-      "commands": ["uv"]
+      "commands": [
+        "uv"
+      ]
     },
     {
       "name": "Python",
-      "commands": ["python3"]
+      "commands": [
+        "python3"
+      ]
     },
     {
       "name": "jq for parsing json",
-      "commands": ["jq"]
+      "commands": [
+        "jq"
+      ]
     }
   ],
   "services": [
@@ -30,7 +41,16 @@
       "description": "Native Redis via apt-get.",
       "workingDirectory": ".",
       "command": "redis-server",
-      "arguments": ["--port", "6379", "--bind", "127.0.0.1", "--save", "", "--appendonly", "no"],
+      "arguments": [
+        "--port",
+        "6379",
+        "--bind",
+        "127.0.0.1",
+        "--save",
+        "",
+        "--appendonly",
+        "no"
+      ],
       "port": 6379,
       "startupTimeoutSeconds": 15
     },
@@ -53,7 +73,9 @@
       "description": "Qdrant vector store for Dify. Run install-middleware.sh --qdrant first. Set VECTOR_STORE=qdrant and QDRANT_URL=http://127.0.0.1:6333 in runtime/dify/api/.env.",
       "workingDirectory": "runtime/ubuntu-stack/data",
       "command": "../bin/qdrant/qdrant",
-      "arguments": ["--disable-telemetry"],
+      "arguments": [
+        "--disable-telemetry"
+      ],
       "port": 6333,
       "startupTimeoutSeconds": 30
     },
@@ -89,7 +111,10 @@
       "description": "Dify Next.js web app. Requires pnpm and web/.env.local.",
       "workingDirectory": "runtime/dify/web",
       "command": "bash",
-      "arguments": ["-c", "corepack pnpm install --frozen-lockfile && exec corepack pnpm dev --port 3001"],
+      "arguments": [
+        "-c",
+        "corepack pnpm install --frozen-lockfile && exec corepack pnpm dev --port 3001"
+      ],
       "port": 3001,
       "startupTimeoutSeconds": 300
     },
@@ -125,7 +150,12 @@
       "description": "Native MinIO object storage for RAGFlow.",
       "workingDirectory": ".",
       "command": "runtime/ubuntu-stack/bin/minio/minio",
-      "arguments": ["server", "runtime/ubuntu-stack/data/minio", "--console-address", ":9001"],
+      "arguments": [
+        "server",
+        "runtime/ubuntu-stack/data/minio",
+        "--console-address",
+        ":9001"
+      ],
       "port": 9000,
       "startupTimeoutSeconds": 30
     },
@@ -161,7 +191,15 @@
       "description": "RAGFlow Vite web app.",
       "workingDirectory": "runtime/ragflow/web",
       "command": "npm",
-      "arguments": ["run", "dev", "--", "--host", "127.0.0.1", "--port", "8080"],
+      "arguments": [
+        "run",
+        "dev",
+        "--",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8080"
+      ],
       "port": 8080,
       "startupTimeoutSeconds": 90
     },
@@ -171,14 +209,23 @@
       "description": "Custom Next.js Chatbot Frontend.",
       "workingDirectory": "frontend",
       "command": "bash",
-      "arguments": ["-c", "npm install && npm run dev -- --port 3000"],
+      "arguments": [
+        "-c",
+        "npm install && npm run dev -- --port 3000"
+      ],
       "port": 3000,
       "startupTimeoutSeconds": 90
     }
   ],
   "clean": {
-    "logGlobs": ["runtime/ubuntu-stack/logs/*"],
-    "cacheGlobs": ["runtime/ubuntu-stack/tmp/*"],
-    "dataGlobs": ["runtime/ubuntu-stack/data/*"]
+    "logGlobs": [
+      "runtime/ubuntu-stack/logs/*"
+    ],
+    "cacheGlobs": [
+      "runtime/ubuntu-stack/tmp/*"
+    ],
+    "dataGlobs": [
+      "runtime/ubuntu-stack/data/*"
+    ]
   }
 }
