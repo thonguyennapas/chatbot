@@ -57,3 +57,68 @@ Trong quá trình phát triển, nếu hệ thống bị treo hoặc bạn muố
   ./scripts/ubuntu/manage.sh nuke-data
   ```
   *Tác dụng:* Xóa sạch toàn bộ Database (Postgres, Qdrant), file tạm, log và xóa luôn bộ nhớ trạng thái cài đặt. Dùng khi bạn muốn **Reset dự án về trạng thái như mới tải về**.
+
+## 3. Xử lý sự cố thường gặp
+
+### dify-api không khởi động được (port 5001 timeout)
+
+**Triệu chứng:**
+```
+Error: Service 'dify-api' did not open port 5001 within 90 seconds.
+```
+
+**Bước 1: Kiểm tra log lỗi**
+```bash
+tail -50 ~/chatbot/runtime/ubuntu-stack/logs/dify-api.err.log
+```
+
+**Bước 2: Nếu log báo lỗi Alembic migration** (ví dụ: `DuplicateTable`, `AmbiguousFunction`, `relation already exists`...)
+
+Nguyên nhân: Quá trình `flask db upgrade` bị gián đoạn giữa chừng, khiến schema đã được tạo trong Postgres nhưng Alembic chưa kịp ghi nhận revision vào bảng `alembic_version`.
+
+**Cách fix:** Stamp database tới revision mới nhất (bỏ qua các migration đã apply một phần):
+
+```bash
+cd ~/chatbot/runtime/dify/api
+uv run flask db stamp heads
+```
+
+Sau đó khởi động lại:
+```bash
+cd ~/chatbot
+./scripts/ubuntu/manage.sh start
+```
+
+> **Lưu ý:** Lệnh `stamp heads` chỉ ghi revision vào DB mà **không chạy bất kỳ SQL nào**. Chỉ dùng khi lỗi là do object đã tồn tại (duplicate). Nếu lỗi là thiếu table/column thì không nên stamp mà cần xử lý migration cụ thể.
+
+### dify-plugin-daemon không khởi động được (port 5002 timeout)
+
+**Triệu chứng:**
+```
+Error: Service 'dify-plugin-daemon' did not open port 5002 within 15 seconds.
+```
+
+**Bước 1: Kiểm tra log lỗi**
+```bash
+tail -30 ~/chatbot/runtime/ubuntu-stack/logs/dify-plugin-daemon.err.log
+tail -30 ~/chatbot/runtime/ubuntu-stack/logs/dify-plugin-daemon.out.log
+```
+
+**Bước 2: Nếu log không có lỗi rõ ràng** — có thể do timeout quá ngắn (mặc định 15s). Mở file `runtime/ubuntu-stack/stack.local.json`, tìm service `dify-plugin-daemon` và tăng `startupTimeoutSeconds` lên `30` hoặc `60`:
+
+```json
+{
+  "name": "dify-plugin-daemon",
+  "startupTimeoutSeconds": 30
+}
+```
+
+Sau đó khởi động lại:
+```bash
+./scripts/ubuntu/manage.sh start
+```
+
+**Bước 3: Nếu log báo lỗi `KEY` hoặc `permission denied`** — kiểm tra binary plugin-daemon có quyền thực thi:
+```bash
+chmod +x ~/chatbot/runtime/ubuntu-stack/bin/plugin-daemon/plugin-daemon
+```

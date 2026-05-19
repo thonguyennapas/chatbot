@@ -48,7 +48,7 @@ PLUGIN_DIR="$BIN_DIR/plugin-daemon"
 if [ ! -f "$PLUGIN_DIR/plugin-daemon" ]; then
     echo "Downloading Dify Plugin Daemon..."
     mkdir -p "$PLUGIN_DIR"
-    wget -qO "$PLUGIN_DIR/plugin-daemon" https://github.com/langgenius/dify-plugin-daemon/releases/download/0.6.0/dify-plugin-linux-amd64
+    wget -qO "$PLUGIN_DIR/plugin-daemon" https://github.com/langgenius/dify-plugin-daemon/releases/download/0.6.1/dify-plugin-linux-amd64
     chmod +x "$PLUGIN_DIR/plugin-daemon"
 fi
 

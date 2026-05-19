@@ -78,7 +78,7 @@
       "command": "bash",
       "arguments": [
         "-c",
-        "SERVER_PORT=5002 KEY=lYkiYYT6owG+71oLerGzA7GXCgOT++6ovaezWAjpCjf+Sjc3ZtU+qUEi MAX_EXECUTION_TIMEOUT=300 MAX_WORKERS=50 runtime/ubuntu-stack/bin/plugin-daemon/plugin-daemon"
+        "SERVER_HOST=127.0.0.1 SERVER_PORT=5002 KEY=lYkiYYT6owG+71oLerGzA7GXCgOT++6ovaezWAjpCjf+Sjc3ZtU+qUEi MAX_EXECUTION_TIMEOUT=300 MAX_WORKERS=50 runtime/ubuntu-stack/bin/plugin-daemon/plugin-daemon"
       ],
       "port": 5002,
       "startupTimeoutSeconds": 15
