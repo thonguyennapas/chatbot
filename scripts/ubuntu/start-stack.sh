@@ -71,9 +71,13 @@ for (( i=0; i<$SERVICES_LENGTH; i++ )); do
             echo "  Port $PORT is open."
         else
             echo "  Failed: Service $NAME did not open port $PORT in $TIMEOUT seconds."
-            if [ -f "$ERR_FILE" ]; then
+            if [ -f "$ERR_FILE" ] && [ -s "$ERR_FILE" ]; then
                 echo "  --- Tail of $ERR_FILE ---"
                 tail -n 10 "$ERR_FILE" | sed 's/^/    /'
+                echo "  -------------------------"
+            elif [ -f "$LOG_FILE" ] && [ -s "$LOG_FILE" ]; then
+                echo "  --- Tail of $LOG_FILE (stderr was empty) ---"
+                tail -n 10 "$LOG_FILE" | sed 's/^/    /'
                 echo "  -------------------------"
             fi
             kill "$NEW_PID" 2>/dev/null || true
