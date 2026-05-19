@@ -32,6 +32,7 @@ if [ -x "$INITDB_CMD" ] && [ ! -d "$PG_DATA" ]; then
     su postgres -c "\"/usr/lib/postgresql/$PG_VER/bin/pg_ctl\" -D \"$PG_DATA\" -o \"-p 5433\" start"
     sleep 3
     su postgres -c "\"/usr/lib/postgresql/$PG_VER/bin/createdb\" -p 5433 dify || true"
+    su postgres -c "\"/usr/lib/postgresql/$PG_VER/bin/createdb\" -p 5433 dify_plugin || true"
     su postgres -c "\"/usr/lib/postgresql/$PG_VER/bin/pg_ctl\" -D \"$PG_DATA\" stop"
 else
     echo "Postgres data directory already initialized or initdb not found."
