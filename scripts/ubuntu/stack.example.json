@@ -78,10 +78,10 @@
       "command": "bash",
       "arguments": [
         "-c",
-        "set -a && source runtime/ubuntu-stack/plugin-daemon.env && set +a && runtime/ubuntu-stack/bin/plugin-daemon/plugin-daemon server"
+        "set -a && source runtime/ubuntu-stack/plugin-daemon.env && set +a && runtime/ubuntu-stack/bin/plugin-daemon/plugin-daemon-cli migrate && exec runtime/ubuntu-stack/bin/plugin-daemon/plugin-daemon-server"
       ],
       "port": 5002,
-      "startupTimeoutSeconds": 30
+      "startupTimeoutSeconds": 60
     },
     {
       "name": "dify-web",

@@ -43,13 +43,39 @@ if [ ! -d "$ES_DIR" ]; then
     mv "$BIN_DIR/elasticsearch-8.11.3" "$ES_DIR"
 fi
 
-# Plugin Daemon
+# Plugin Daemon (must be built from source — the GitHub release binary is the CLI, not the server)
 PLUGIN_DIR="$BIN_DIR/plugin-daemon"
-if [ ! -f "$PLUGIN_DIR/plugin-daemon" ]; then
-    echo "Downloading Dify Plugin Daemon..."
+PLUGIN_SRC_DIR="$RUNTIME_ROOT/src/dify-plugin-daemon"
+PLUGIN_VERSION="0.6.1"
+
+if [ ! -f "$PLUGIN_DIR/plugin-daemon-server" ]; then
+    echo "Building Dify Plugin Daemon from source (v${PLUGIN_VERSION})..."
     mkdir -p "$PLUGIN_DIR"
-    wget -qO "$PLUGIN_DIR/plugin-daemon" https://github.com/langgenius/dify-plugin-daemon/releases/download/0.6.1/dify-plugin-linux-amd64
-    chmod +x "$PLUGIN_DIR/plugin-daemon"
+
+    # Ensure Go is installed
+    if ! command -v go >/dev/null 2>&1; then
+        echo "Error: Go is required to build the plugin daemon. Install it with: sudo apt-get install golang-go"
+        exit 1
+    fi
+
+    # Clone or update source
+    if [ ! -d "$PLUGIN_SRC_DIR" ]; then
+        git clone --depth 1 --branch "$PLUGIN_VERSION" https://github.com/langgenius/dify-plugin-daemon.git "$PLUGIN_SRC_DIR"
+    fi
+
+    # Build server binary (the actual daemon)
+    echo "  Building server binary..."
+    (cd "$PLUGIN_SRC_DIR" && go build \
+        -ldflags "-X 'github.com/langgenius/dify-plugin-daemon/pkg/manifest.VersionX=${PLUGIN_VERSION}'" \
+        -o "$PLUGIN_DIR/plugin-daemon-server" cmd/server/main.go)
+
+    # Build commandline binary (for migrations)
+    echo "  Building commandline binary..."
+    (cd "$PLUGIN_SRC_DIR" && go build \
+        -ldflags "-X 'main.VersionX=${PLUGIN_VERSION}'" \
+        -o "$PLUGIN_DIR/plugin-daemon-cli" ./cmd/commandline/)
+
+    echo "  Plugin Daemon binaries built successfully."
 fi
 
 echo "Middleware installation complete."
