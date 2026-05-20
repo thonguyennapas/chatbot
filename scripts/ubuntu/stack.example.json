@@ -113,15 +113,15 @@
       "command": "bash",
       "arguments": [
         "-c",
-        "corepack pnpm install --frozen-lockfile && exec corepack pnpm dev --port 3001"
+        "corepack pnpm install --frozen-lockfile && corepack pnpm build && exec corepack pnpm start --port 3001"
       ],
       "port": 3001,
-      "startupTimeoutSeconds": 300
+      "startupTimeoutSeconds": 600
     },
     {
       "name": "mysql",
-      "enabled": true,
-      "description": "Native MySQL for RAGFlow.",
+      "enabled": false,
+      "description": "Disabled: uses system MySQL (port 3306) via systemd. Run: sudo systemctl start mysql",
       "workingDirectory": ".",
       "command": "bash",
       "arguments": [
@@ -139,7 +139,7 @@
       "command": "bash",
       "arguments": [
         "-c",
-        "chown -R daemon:daemon $(pwd)/runtime/ubuntu-stack/bin/elasticsearch && su daemon -s /bin/bash -c \"$(pwd)/runtime/ubuntu-stack/bin/elasticsearch/bin/elasticsearch -Ehttp.port=1200 -Ediscovery.type=single-node -Expack.security.http.ssl.enabled=false -Expack.security.transport.ssl.enabled=false\""
+        "chown -R daemon:daemon $(pwd)/runtime/ubuntu-stack/bin/elasticsearch && su daemon -s /bin/bash -c \"$(pwd)/runtime/ubuntu-stack/bin/elasticsearch/bin/elasticsearch -Ehttp.port=1200 -Ediscovery.type=single-node -Expack.security.enabled=false -Expack.security.http.ssl.enabled=false -Expack.security.transport.ssl.enabled=false\""
       ],
       "port": 1200,
       "startupTimeoutSeconds": 120
@@ -167,7 +167,7 @@
       "command": "bash",
       "arguments": [
         "-c",
-        "PYTHONPATH=$(pwd) python3 api/ragflow_server.py"
+        "PYTHONPATH=$(pwd) uv run python api/ragflow_server.py"
       ],
       "port": 9380,
       "startupTimeoutSeconds": 120
@@ -180,7 +180,7 @@
       "command": "bash",
       "arguments": [
         "-c",
-        "PYTHONPATH=$(pwd) python3 rag/svr/task_executor.py 0"
+        "PYTHONPATH=$(pwd) uv run python rag/svr/task_executor.py 0"
       ],
       "port": 0,
       "startupTimeoutSeconds": 15
@@ -190,18 +190,13 @@
       "enabled": true,
       "description": "RAGFlow Vite web app.",
       "workingDirectory": "runtime/ragflow/web",
-      "command": "npm",
+      "command": "bash",
       "arguments": [
-        "run",
-        "dev",
-        "--",
-        "--host",
-        "127.0.0.1",
-        "--port",
-        "8080"
+        "-c",
+        "npm install && npx vite build && npx vite preview --host 127.0.0.1 --port 8080"
       ],
       "port": 8080,
-      "startupTimeoutSeconds": 90
+      "startupTimeoutSeconds": 300
     },
     {
       "name": "chatbot-frontend",
@@ -211,7 +206,7 @@
       "command": "bash",
       "arguments": [
         "-c",
-        "npm install && npm run dev -- --port 3000"
+        "npm install && npm run build && npm run start -- --port 3000"
       ],
       "port": 3000,
       "startupTimeoutSeconds": 90

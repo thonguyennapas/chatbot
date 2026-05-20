@@ -66,7 +66,30 @@ if command -v mysqld >/dev/null 2>&1 && [ ! -d "$MYSQL_DATA" ]; then
         systemctl restart apparmor || true
     fi
 else
-    echo "MySQL data directory already initialized or mysqld not found."
+    echo \"MySQL data directory already initialized or mysqld not found.\"
+fi
+
+# Create RAGFlow database in MySQL if not yet created
+RAGFLOW_DB_MARKER="$RUNTIME_ROOT/.ragflow_db_created"
+if command -v mysqld >/dev/null 2>&1 && [ -d "$MYSQL_DATA" ] && [ ! -f "$RAGFLOW_DB_MARKER" ]; then
+    echo "Creating RAGFlow database (rag_flow) in MySQL..."
+    
+    # Start MySQL temporarily
+    mysqld --datadir="$MYSQL_DATA" --port=3307 --user=mysql --socket=/tmp/ragflow_setup.sock &
+    MYSQL_TMP_PID=$!
+    sleep 5
+    
+    # Create database
+    mysql --socket=/tmp/ragflow_setup.sock -u root -e "CREATE DATABASE IF NOT EXISTS rag_flow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || \
+    mysql -h 127.0.0.1 -P 3307 -u root -e "CREATE DATABASE IF NOT EXISTS rag_flow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
+    
+    # Stop MySQL
+    kill "$MYSQL_TMP_PID" 2>/dev/null || true
+    wait "$MYSQL_TMP_PID" 2>/dev/null || true
+    rm -f /tmp/ragflow_setup.sock
+    
+    touch "$RAGFLOW_DB_MARKER"
+    echo "  RAGFlow database created."
 fi
 
 echo "Database setup complete."

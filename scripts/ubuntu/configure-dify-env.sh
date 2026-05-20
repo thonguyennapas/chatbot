@@ -117,4 +117,53 @@ ENVEOF
     echo "  Written: $PLUGIN_ENV"
 fi
 
+# Configure RAGFlow service_conf.yaml
+RAGFLOW_CONF="$REPO_ROOT/runtime/ragflow/conf/service_conf.yaml"
+
+if [ -d "$REPO_ROOT/runtime/ragflow/conf" ]; then
+    echo "Configuring RAGFlow service_conf.yaml for native stack..."
+    cat > "$RAGFLOW_CONF" <<'RAGFLOWEOF'
+ragflow:
+  host: 0.0.0.0
+  http_port: 9380
+admin:
+  host: 0.0.0.0
+  http_port: 9381
+mysql:
+  name: 'rag_flow'
+  user: 'ragflow'
+  password: 'ragflow123'
+  host: '127.0.0.1'
+  port: 3306
+  max_connections: 900
+  stale_timeout: 300
+  max_allowed_packet: 1073741824
+minio:
+  user: 'minioadmin'
+  password: 'minioadmin'
+  host: 'localhost:9000'
+  bucket: ''
+  prefix_path: ''
+es:
+  hosts: 'http://localhost:1200'
+  username: ''
+  password: ''
+redis:
+  db: 1
+  username: ''
+  password: ''
+  host: 'localhost:6379'
+task_executor:
+  message_queue_type: 'redis'
+user_default_llm:
+  default_models:
+    embedding_model:
+      name: 'bge-m3'
+      factory: 'xxxx'
+      api_key: 'xxx'
+      base_url: 'http://localhost:6380'
+RAGFLOWEOF
+    echo "  Written: $RAGFLOW_CONF"
+fi
+
 echo "Environment configuration complete."
