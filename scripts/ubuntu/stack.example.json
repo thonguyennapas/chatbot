@@ -139,7 +139,7 @@
       "command": "bash",
       "arguments": [
         "-c",
-        "chown -R daemon:daemon $(pwd)/runtime/ubuntu-stack/bin/elasticsearch && su daemon -s /bin/bash -c \"$(pwd)/runtime/ubuntu-stack/bin/elasticsearch/bin/elasticsearch -Ehttp.port=1200 -Ediscovery.type=single-node -Expack.security.enabled=false -Expack.security.http.ssl.enabled=false -Expack.security.transport.ssl.enabled=false\""
+        "chown -R daemon:daemon $(pwd)/runtime/ubuntu-stack/bin/elasticsearch && su daemon -s /bin/bash -c \"ES_JAVA_OPTS='-Xms1g -Xmx1g' $(pwd)/runtime/ubuntu-stack/bin/elasticsearch/bin/elasticsearch -Ehttp.port=1200 -Ediscovery.type=single-node -Expack.security.enabled=false -Expack.security.http.ssl.enabled=false -Expack.security.transport.ssl.enabled=false\""
       ],
       "port": 1200,
       "startupTimeoutSeconds": 120
