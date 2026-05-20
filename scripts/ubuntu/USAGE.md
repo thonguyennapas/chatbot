@@ -156,23 +156,60 @@ Người dùng → Chatbot Frontend → Dify API → RAGFlow API → Tài liệu
 
 ---
 
-## Phần 3: Sử dụng Chatbot Frontend
+## Phần 3: Kết nối Chatbot Frontend với Dify
 
-### 3.1 Truy cập
+### 3.1 Lấy API Key từ Dify
+
+Chatbot Frontend giao tiếp với Dify qua API. Cần lấy API Key:
+
+1. Mở Dify: `http://<SERVER_IP>:3001`
+2. Tạo một **App** (nếu chưa có) — xem Phần 1.4
+3. Trong App, click **"API Access"** (góc trái)
+4. Click **"API Key"** → **"Create"**
+5. Copy API Key (dạng `app-xxxxxxxxxxxx`)
+
+### 3.2 Cấu hình Frontend
+
+Sửa file `frontend/.env.local` trên server:
+
+```bash
+nano ~/chatbot/frontend/.env.local
+```
+
+Cập nhật 3 dòng quan trọng:
+
+```env
+# Đã tự động set bởi configure-dify-env.sh:
+DIFY_BASE_URL=http://127.0.0.1:5001
+
+# ⚠️ BẮT BUỘC — Paste API Key từ bước 3.1:
+DIFY_API_KEY=app-xxxxxxxxxxxx
+
+# Tắt mock mode để dùng Dify thật:
+DIFY_USE_MOCK=false
+```
+
+> ⚠️ **Không có `DIFY_API_KEY`**, chatbot sẽ chạy ở **mock mode** — trả lời giả lập, không dùng AI thật!
+
+### 3.3 Restart Frontend (sau khi sửa .env)
+
+```bash
+cd ~/chatbot
+
+# Build lại (vì production mode cần rebuild khi đổi env)
+cd frontend && npm run build && cd ~/chatbot
+
+# Restart chỉ frontend
+./scripts/ubuntu/manage.sh restart chatbot-frontend
+```
+
+### 3.4 Kiểm tra kết nối
 
 1. Mở `http://<SERVER_IP>:3000`
-2. Đăng nhập (nếu có cấu hình authentication)
+2. Đăng nhập
+3. Nhập câu hỏi thử → Nếu câu trả lời có nội dung thật (không phải "phản hồi giả lập") → **Thành công!**
 
-### 3.2 Chat
-
-1. Nhập câu hỏi vào ô chat (ví dụ: *"Quy trình thanh toán liên ngân hàng là gì?"*)
-2. Chatbot sẽ:
-   - Tìm kiếm trong knowledge base
-   - Lấy các đoạn tài liệu liên quan
-   - Sinh câu trả lời bằng LLM
-   - Hiển thị **trích dẫn nguồn** kèm theo
-
-### 3.3 Tips sử dụng hiệu quả
+### 3.5 Tips sử dụng hiệu quả
 
 - **Câu hỏi cụ thể** cho kết quả tốt hơn câu hỏi chung chung
   - ❌ *"Nói về NAPAS"*
@@ -197,6 +234,25 @@ cd ~/chatbot
 
 # Tắt tất cả service
 ./scripts/ubuntu/manage.sh stop
+
+# Restart 1 service (ví dụ: sau khi update frontend code)
+./scripts/ubuntu/manage.sh restart chatbot-frontend
+```
+
+### 4.2 Workflow update code
+
+```bash
+cd ~/chatbot
+git pull
+
+# Nếu sửa frontend:
+cd frontend && npm run build && cd ~/chatbot
+./scripts/ubuntu/manage.sh restart chatbot-frontend
+
+# Nếu sửa config (stack.example.json):
+./scripts/ubuntu/bootstrap.sh --overwrite-config
+./scripts/ubuntu/manage.sh stop
+./scripts/ubuntu/manage.sh start
 ```
 
 ### 4.2 Xem log

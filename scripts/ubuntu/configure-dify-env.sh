@@ -50,6 +50,12 @@ if [ ! -f "$FRONTEND_ENV" ] && [ -f "$FRONTEND_EXAMPLE" ]; then
     RANDOM_SECRET=$(openssl rand -base64 32)
     # Use | as delimiter for sed to avoid issues with / or + in base64
     sed -i "s|^SESSION_SECRET=.*|SESSION_SECRET=${RANDOM_SECRET}|" "$FRONTEND_ENV"
+
+    # Configure Dify connection (without this, frontend runs in mock mode)
+    sed -i "s|^DIFY_BASE_URL=.*|DIFY_BASE_URL=http://127.0.0.1:5001|" "$FRONTEND_ENV"
+    sed -i "s|^DIFY_USE_MOCK=.*|DIFY_USE_MOCK=false|" "$FRONTEND_ENV"
+    echo "  NOTE: Set DIFY_API_KEY in frontend/.env.local after creating a Dify App."
+    echo "  Get the key from: Dify → App → API Access → API Key"
 fi
 
 # Configure Plugin Daemon env
