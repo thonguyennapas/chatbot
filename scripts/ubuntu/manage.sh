@@ -15,6 +15,7 @@ print_usage() {
     echo "  install      - Runs the entire setup pipeline end-to-end (Resumes from last failed step)."
     echo "  start        - Starts all services defined in stack.local.json."
     echo "  stop         - Gracefully stops all services."
+    echo "  restart NAME - Restarts a single service by name (e.g. restart chatbot-frontend)."
     echo "  status       - Shows the running status of all services."
     echo "  nuke-ports   - Forcefully kills any processes holding project ports to free RAM."
     echo "  nuke-data    - Wipes all databases, logs, and resets the install state."
@@ -96,6 +97,90 @@ cmd_nuke_data() {
     echo "Data completely nuked. Ready for a fresh install."
 }
 
+cmd_restart() {
+    local SERVICE_NAME="$1"
+    if [ -z "$SERVICE_NAME" ]; then
+        echo "Usage: ./manage.sh restart <service-name>"
+        echo "Available services:"
+        jq -r '.services[] | select(.enabled == true) | "  " + .name' "$RUNTIME_ROOT/stack.local.json" 2>/dev/null || echo "  (config not found)"
+        exit 1
+    fi
+
+    local CONFIG_FILE="$RUNTIME_ROOT/stack.local.json"
+    local PID_FILE="$RUNTIME_ROOT/pids/$SERVICE_NAME.pid"
+
+    # Verify service exists in config
+    local EXISTS=$(jq -r --arg name "$SERVICE_NAME" '.services[] | select(.name == $name) | .name' "$CONFIG_FILE" 2>/dev/null)
+    if [ -z "$EXISTS" ]; then
+        echo "Error: Service '$SERVICE_NAME' not found in stack.local.json"
+        exit 1
+    fi
+
+    # Stop the service
+    if [ -f "$PID_FILE" ]; then
+        local OLD_PID=$(cat "$PID_FILE")
+        if kill -0 "$OLD_PID" 2>/dev/null; then
+            echo "Stopping: $SERVICE_NAME pid=$OLD_PID"
+            kill "$OLD_PID" || true
+            for (( w=0; w<10; w++ )); do
+                if kill -0 "$OLD_PID" 2>/dev/null; then sleep 1; else break; fi
+            done
+            if kill -0 "$OLD_PID" 2>/dev/null; then
+                echo "Force killing $SERVICE_NAME"
+                kill -9 "$OLD_PID" || true
+            fi
+        fi
+        rm -f "$PID_FILE"
+    fi
+
+    # Also kill by port if needed
+    local PORT=$(jq -r --arg name "$SERVICE_NAME" '.services[] | select(.name == $name) | .port' "$CONFIG_FILE")
+    if [ "$PORT" -gt 0 ] 2>/dev/null && ss -tuln | grep -q ":$PORT "; then
+        echo "Freeing port $PORT..."
+        fuser -k -9 "$PORT/tcp" 2>/dev/null || true
+        sleep 1
+    fi
+
+    # Start the service (reuse start-stack logic for a single service)
+    local IDX=$(jq -r --arg name "$SERVICE_NAME" '[.services[] | .name] | to_entries[] | select(.value == $name) | .key' "$CONFIG_FILE")
+    local WD=$(jq -r ".services[$IDX].workingDirectory" "$CONFIG_FILE")
+    local CMD=$(jq -r ".services[$IDX].command" "$CONFIG_FILE")
+    local TIMEOUT=$(jq -r ".services[$IDX].startupTimeoutSeconds" "$CONFIG_FILE")
+    local LOG_FILE="$RUNTIME_ROOT/logs/$SERVICE_NAME.out.log"
+    local ERR_FILE="$RUNTIME_ROOT/logs/$SERVICE_NAME.err.log"
+
+    mapfile -t ARGS < <(jq -r ".services[$IDX].arguments[]" "$CONFIG_FILE" 2>/dev/null || true)
+
+    local TARGET_DIR="$REPO_ROOT"
+    [ "$WD" != "." ] && TARGET_DIR="$REPO_ROOT/$WD"
+
+    echo "Starting: $SERVICE_NAME"
+    (
+        cd "$TARGET_DIR"
+        nohup "$CMD" "${ARGS[@]}" > "$LOG_FILE" 2> "$ERR_FILE" < /dev/null &
+        echo $! > "$PID_FILE"
+    )
+
+    local NEW_PID=$(cat "$PID_FILE")
+    echo "Started: $SERVICE_NAME pid=$NEW_PID"
+
+    if [ "$PORT" -gt 0 ] 2>/dev/null; then
+        source "$SCRIPT_DIR/stack-common.sh"
+        if wait_for_port "$PORT" "$TIMEOUT" "$SERVICE_NAME"; then
+            echo "  Port $PORT is open. ✓"
+        else
+            echo "  Failed: $SERVICE_NAME did not open port $PORT in $TIMEOUT seconds."
+            if [ -f "$ERR_FILE" ] && [ -s "$ERR_FILE" ]; then
+                echo "  --- Tail of $ERR_FILE ---"
+                tail -n 10 "$ERR_FILE" | sed 's/^/    /'
+                echo "  -------------------------"
+            fi
+        fi
+    else
+        echo "  Started (no port to check). ✓"
+    fi
+}
+
 case "$1" in
     install)
         cmd_install
@@ -108,6 +193,9 @@ case "$1" in
         ;;
     status)
         "$SCRIPT_DIR/status-stack.sh"
+        ;;
+    restart)
+        cmd_restart "$2"
         ;;
     nuke-ports)
         cmd_nuke_ports
