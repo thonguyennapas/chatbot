@@ -257,30 +257,31 @@ export function ChatShell({
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-4 md:px-0">
+        <div className="flex-1 overflow-y-auto px-4 md:px-6">
           {!active || active.messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center p-8 text-center animate-slide-up">
-              <div className="mb-6 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl shadow-lg border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
-                <img src="/logo.png" alt="Napas Logo" className="h-10 w-10 object-contain" />
+            <div className="mx-auto flex h-full max-w-3xl flex-col items-center justify-center p-8 text-center animate-slide-up">
+              <div className="mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl shadow-lg border" style={{ background: '#FFFFFF', borderColor: 'var(--border-color)' }}>
+                <img src="/logo.png" alt="Napas Logo" className="h-14 w-14 object-contain" />
               </div>
-              <h2 className="text-2xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Trợ lý Nội bộ Napas</h2>
-              <p className="max-w-md text-sm mb-8" style={{ color: 'var(--text-secondary)' }}>
+              <h2 className="text-2xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Trợ lý Nội bộ NAPAS</h2>
+              <p className="max-w-md text-sm mb-10" style={{ color: 'var(--text-secondary)' }}>
                 Hỏi đáp dựa trên tài liệu nội bộ, quy trình và chính sách. Thông tin được trích xuất an toàn và bảo mật.
               </p>
-              <div className="grid w-full max-w-2xl grid-cols-1 gap-3 md:grid-cols-2 text-left">
+              <div className="grid w-full max-w-2xl grid-cols-1 gap-4 md:grid-cols-2 text-left">
                 {[
-                  'Tóm tắt quy trình phát hành thẻ NAPAS.',
-                  'Các lỗi giao dịch phổ biến và cách xử lý?',
-                  'Chính sách bảo mật cho ứng dụng ví điện tử?',
-                  'Chuẩn kết nối API cho ngân hàng thành viên?'
+                  { icon: '📋', text: 'Tóm tắt quy trình phát hành thẻ NAPAS.' },
+                  { icon: '🔧', text: 'Các lỗi giao dịch phổ biến và cách xử lý?' },
+                  { icon: '🔒', text: 'Chính sách bảo mật cho ứng dụng ví điện tử?' },
+                  { icon: '🔗', text: 'Chuẩn kết nối API cho ngân hàng thành viên?' }
                 ].map((prompt, i) => (
                   <button
                     key={i}
-                    onClick={() => { setDraft(prompt); setTimeout(() => textareaRef.current?.focus(), 0) }}
-                    className="rounded-xl border p-4 text-sm transition-all hover:-translate-y-1 hover:shadow-md cursor-pointer"
+                    onClick={() => { setDraft(prompt.text); setTimeout(() => textareaRef.current?.focus(), 0) }}
+                    className="group flex items-start gap-3 rounded-2xl border p-4 text-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg cursor-pointer"
                     style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
                   >
-                    {prompt}
+                    <span className="text-lg mt-0.5 shrink-0 transition-transform duration-200 group-hover:scale-110">{prompt.icon}</span>
+                    <span className="leading-relaxed">{prompt.text}</span>
                   </button>
                 ))}
               </div>
@@ -295,9 +296,9 @@ export function ChatShell({
           )}
         </div>
 
-        <div className="p-4 md:px-0 bg-gradient-to-t" style={{ backgroundImage: 'linear-gradient(to top, var(--bg-primary) 80%, transparent)' }}>
+        <div className="p-4 md:px-6" style={{ background: 'var(--bg-primary)' }}>
           {error && (
-            <div className="mx-auto mb-3 max-w-3xl rounded-lg p-3 text-sm animate-fade-in" style={{ background: 'var(--error-bg)', color: 'var(--error-text)', border: '1px solid var(--error-border)' }}>
+            <div className="mx-auto mb-3 max-w-3xl rounded-2xl p-3 text-sm animate-fade-in" style={{ background: 'var(--error-bg)', color: 'var(--error-text)', border: '1px solid var(--error-border)' }}>
               {error}
             </div>
           )}
@@ -310,30 +311,34 @@ export function ChatShell({
               placeholder="Nhập câu hỏi cho trợ lý..."
               disabled={sending}
               rows={1}
-              className="block w-full resize-none rounded-2xl py-3 pl-4 pr-14 text-sm outline-none shadow-sm transition-shadow"
+              className="block w-full resize-none rounded-2xl py-3.5 pl-5 pr-14 text-sm outline-none transition-all"
               style={{
-                background: 'var(--bg-surface-2)',
+                background: 'var(--bg-surface)',
                 color: 'var(--text-primary)',
                 border: '1px solid var(--border-color)',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
                 minHeight: '52px',
                 maxHeight: '150px'
               }}
-              onFocus={(e) => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
-              onBlur={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent-primary)'; e.currentTarget.style.boxShadow = '0 2px 16px rgba(0,163,224,0.12)' }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)' }}
             />
             <button
               onClick={sendMessage}
               disabled={sending || !draft.trim()}
               title="Gửi tin nhắn"
-              className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="absolute bottom-2.5 right-2.5 flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               style={{
-                background: draft.trim() ? 'var(--accent-primary)' : 'var(--bg-surface-hover)',
+                background: draft.trim() ? 'linear-gradient(135deg, var(--accent-primary), var(--accent-cta))' : 'var(--bg-surface-hover)',
                 color: draft.trim() ? '#fff' : 'var(--text-muted)'
               }}
             >
               <IconSend className="h-4 w-4" />
             </button>
           </div>
+          <p className="mx-auto max-w-3xl mt-2 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+            Trợ lý AI có thể mắc lỗi. Hãy kiểm chứng thông tin quan trọng.
+          </p>
         </div>
       </main>
     </div>
