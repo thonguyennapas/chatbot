@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 2,
+  "_comment": "v3.3 — Full Dify (no RAGFlow). Lean stack: Qdrant + Redis + Postgres + Dify + Frontend.",
+  "runtimeRoot": "runtime/ubuntu-stack",
+  "prerequisites": [
+    {
+      "name": "Node.js",
+      "commands": ["node", "npm"]
+    },
+    {
+      "name": "Corepack pnpm for Dify web",
+      "commands": ["corepack"]
+    },
+    {
+      "name": "uv for Dify Python services",
+      "commands": ["uv"]
+    },
+    {
+      "name": "Python",
+      "commands": ["python3"]
+    },
+    {
+      "name": "jq for parsing json",
+      "commands": ["jq"]
+    }
+  ],
+  "services": [
+    {
+      "name": "redis",
+      "enabled": true,
+      "description": "Native Redis via apt-get.",
+      "workingDirectory": ".",
+      "command": "redis-server",
+      "arguments": ["--port", "6379", "--bind", "127.0.0.1", "--save", "", "--appendonly", "no"],
+      "port": 6379,
+      "startupTimeoutSeconds": 15
+    },
+    {
+      "name": "postgres",
+      "enabled": true,
+      "description": "Native Postgres for Dify + Plugin Daemon.",
+      "workingDirectory": ".",
+      "command": "bash",
+      "arguments": ["-c", "PG_VER=$(ls /usr/lib/postgresql/ | sort -n | tail -1); su postgres -c \"/usr/lib/postgresql/$PG_VER/bin/postgres -D $(pwd)/runtime/ubuntu-stack/data/postgres -p 5433\""],
+      "port": 5433,
+      "startupTimeoutSeconds": 60
+    },
+    {
+      "name": "qdrant",
+      "enabled": true,
+      "description": "Qdrant vector store for Dify Knowledge Base (Hybrid Search).",
+      "workingDirectory": "runtime/ubuntu-stack/data",
+      "command": "../bin/qdrant/qdrant",
+      "arguments": ["--disable-telemetry"],
+      "port": 6333,
+      "startupTimeoutSeconds": 30
+    },
+    {
+      "name": "dify-api",
+      "enabled": true,
+      "description": "Dify Flask API — Chatflow brain + Knowledge Base.",
+      "workingDirectory": "runtime/dify/api",
+      "command": "bash",
+      "arguments": ["-c", "uv run flask db upgrade && uv run flask run --host 127.0.0.1 --port 5001 --debug"],
+      "port": 5001,
+      "startupTimeoutSeconds": 90
+    },
+    {
+      "name": "dify-plugin-daemon",
+      "enabled": true,
+      "description": "Dify Plugin Daemon v0.14+ — manages model plugins.",
+      "workingDirectory": ".",
+      "command": "bash",
+      "arguments": ["-c", "set -a && source runtime/ubuntu-stack/plugin-daemon.env && set +a && runtime/ubuntu-stack/bin/plugin-daemon/plugin-daemon-cli migrate && exec runtime/ubuntu-stack/bin/plugin-daemon/plugin-daemon-server"],
+      "port": 5002,
+      "startupTimeoutSeconds": 60
+    },
+    {
+      "name": "dify-web",
+      "enabled": true,
+      "description": "Dify Next.js admin UI — Chatflow, KB, Model config.",
+      "workingDirectory": "runtime/dify/web",
+      "command": "bash",
+      "arguments": ["-c", "PORT=3001 exec corepack pnpm start"],
+      "port": 3001,
+      "startupTimeoutSeconds": 600
+    },
+    {
+      "name": "chatbot-frontend",
+      "enabled": true,
+      "description": "Napas Chatbot Next.js Frontend — chat UI with image rendering.",
+      "workingDirectory": "frontend",
+      "command": "bash",
+      "arguments": ["-c", "npm run start -- --port 3000"],
+      "port": 3000,
+      "startupTimeoutSeconds": 90
+    }
+  ],
+  "clean": {
+    "logGlobs": ["runtime/ubuntu-stack/logs/*"],
+    "cacheGlobs": ["runtime/ubuntu-stack/tmp/*"],
+    "dataGlobs": ["runtime/ubuntu-stack/data/*"]
+  }
+}

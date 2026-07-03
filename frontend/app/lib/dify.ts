@@ -119,7 +119,7 @@ function buildMockReply(query: string): string {
   return (
     `Đây là phản hồi giả lập (DIFY_USE_MOCK=true hoặc Dify chưa cấu hình).\n\n` +
     `Câu hỏi của bạn: "${trimmed}"\n\n` +
-    `Khi pipeline RAGFlow + Dify lên, câu trả lời thật sẽ kèm trích dẫn từ tài liệu nội bộ. ` +
+    `Khi Dify Chatflow được cấu hình, câu trả lời thật sẽ kèm trích dẫn từ tài liệu nội bộ. ` +
     `Hiện tại frontend đã streaming token-by-token đúng định dạng Dify SSE.`
   )
 }

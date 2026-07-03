@@ -1,5 +1,7 @@
 # Cài đặt Agentic RAG Stack trên Ubuntu (Native)
 
+> ⚠️ **DEPRECATED (v3.3):** File này mô tả stack cũ (Dify + RAGFlow). Anh dùng **[QUICKSTART-V3.3.md](QUICKSTART-V3.3.md)** thay thế — kiến trúc Full Dify, không cần RAGFlow.
+
 Bộ công cụ này giúp bạn triển khai toàn bộ dự án (Dify, RAGFlow, Frontend) trực tiếp trên máy chủ Ubuntu mà **không cần sử dụng Docker**, giúp tối ưu hóa hiệu năng phần cứng.
 
 ## 1. Yêu cầu hệ thống

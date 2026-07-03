@@ -84,7 +84,9 @@ Người dùng → Chatbot Frontend → Dify API → RAGFlow API → Tài liệu
 4. Cấu hình:
    - Chọn **Model** (ví dụ: `deepseek-chat`)
    - Viết **System Prompt** (ví dụ: *"Bạn là trợ lý nội bộ NAPAS. Trả lời dựa trên tài liệu được cung cấp. Luôn trích dẫn nguồn."*)
-5. Bật **Knowledge** nếu muốn kết nối tài liệu
+5. Liên kết tri thức ngoài (External Knowledge Base) từ RAGFlow (Xem chi tiết hướng dẫn liên kết tại **Phần 2.7**).
+
+> ⚠️ **Lưu ý quan trọng:** Không nên tải file trực tiếp lên Dify vì trình phân tách văn bản (chunking) của Dify rất đơn giản, dễ gây lỗi định dạng bảng biểu hoặc mất ngữ cảnh khi sinh câu trả lời. Hãy xử lý tài liệu trên RAGFlow và liên kết nó sang Dify.
 
 ---
 
@@ -98,27 +100,56 @@ Người dùng → Chatbot Frontend → Dify API → RAGFlow API → Tài liệu
 
 ### 2.2 Cấu hình Model Provider
 
-1. Click avatar → **Model Providers**
-2. Thêm provider (giống Dify):
-   - Chọn **DeepSeek** hoặc **OpenAI**
-   - Nhập API Key
-   - **Quan trọng:** Thêm cả **Embedding model** (ví dụ: `BAAI/bge-m3` từ Hugging Face hoặc `text-embedding-3-small` từ OpenAI)
+RAGFlow cần cả mô hình **Chat (LLM)** để trả lời câu hỏi và mô hình **Embedding (Nhúng)** để phân mảnh lập chỉ mục tài liệu.
+
+1. Click vào avatar ở góc trên bên phải → Chọn **Model Providers**
+2. **Cấu hình Chat Model (LLM):**
+   - **Trường hợp dùng trực tiếp DeepSeek / OpenAI:** Chọn nhà cung cấp tương ứng → Nhập **API Key** → Nhấn **Save**.
+   - **Trường hợp dùng OpenRouter (hoặc cổng API trung gian):**
+     - Chọn nhà cung cấp **OpenRouter** (hoặc **OpenAI-compatible**).
+     - Nhập **API Key** của OpenRouter (dạng `sk-or-v1-...`).
+     - Nhập **Base URL**: `https://openrouter.ai/api/v1`
+     - Nhấp nút **Add Model** để khai báo thủ công mô hình:
+       - **Model Type**: Chọn `chat`
+       - **Model Name**: Nhập chính xác ID model từ OpenRouter:
+         - DeepSeek V3: `deepseek/deepseek-chat`
+         - DeepSeek R1: `deepseek/deepseek-r1` (hoặc bản miễn phí: `deepseek/deepseek-r1:free`)
+         - Claude 3.5 Sonnet: `anthropic/claude-3.5-sonnet`
+         - GPT-4o: `openai/gpt-4o`
+       - **Base URL**: Điền `https://openrouter.ai/api/v1` *(Lưu ý: RAGFlow yêu cầu điền lại Base URL cho từng model trong bảng popup này)*
+       - **Max Tokens**: Điền `4096`
+       - Nhấn **OK** để lưu.
+
+3. **Cấu hình Embedding Model (Quan trọng & Bắt buộc):**
+   - RAGFlow bắt buộc phải có mô hình nhúng để phân tích file. Bạn có các lựa chọn:
+     - **Dùng mô hình chạy Offline (Khuyên dùng - Tiết kiệm chi phí):** Tìm nhà cung cấp **LocalAI** hoặc danh sách mô hình mặc định trong RAGFlow. Chọn mô hình **`BAAI/bge-m3`** hoặc **`BAAI/bge-large-zh-v1.5`** và bật lên (mô hình này chạy hoàn toàn bằng CPU/GPU của máy chủ, không tốn tiền API).
+     - **Dùng Embedding qua OpenRouter (Nếu muốn dùng API ngoài):** Nhấn **Add Model** dưới thẻ cấu hình OpenRouter của bạn:
+       - **Model Type**: Chọn `embedding`
+       - **Model Name**: Điền chính xác ID mô hình nhúng của OpenRouter:
+         - OpenAI Embedding Small: `openai/text-embedding-3-small`
+         - OpenAI Embedding Large: `openai/text-embedding-3-large`
+         - Cohere Multilingual V3: `cohere/embed-multilingual-v3`
+         - BAAI BGE-M3 API: `baai/bge-m3`
+       - **Base URL**: Điền `https://openrouter.ai/api/v1` *(Lưu ý: Điền Base URL tương tự như phần Chat)*
+       - Nhấn **OK** để lưu.
+     - **Dùng OpenAI Embedding trực tiếp:** Chọn OpenAI, nhập API Key và bật mô hình `text-embedding-3-small`.
 
 ### 2.3 Tạo Knowledge Base
 
-1. Vào menu **"Knowledge Base"**
-2. Click **"Create Knowledge Base"**
+1. Vào menu **"Knowledge"** (hoặc **"Kiến thức"**) ở thanh điều hướng trên cùng.
+2. Click nút **"Create Dataset"** (hoặc **"Tạo cơ sở tri thức"**).
 3. Điền:
    - **Name**: Tên knowledge base (ví dụ: *"Tài liệu quy trình NAPAS"*)
    - **Embedding Model**: Chọn model đã cấu hình
-   - **Chunk Method**: Chọn cách chia tài liệu:
-     - **Naive**: Chia theo kích thước cố định (đơn giản, nhanh)
-     - **Q&A**: Tự động tạo cặp hỏi-đáp (tốt cho FAQ)
-     - **Manual**: Chia theo heading/section
-     - **Paper**: Tối ưu cho bài báo khoa học
-     - **Book**: Tối ưu cho sách
-     - **Table**: Tối ưu cho bảng biểu
-4. Nhấn **"Create"**
+   - **Chunk Method (Phương thức phân mảnh - Cực kỳ quan trọng cho RAG)**: Chọn phương thức phù hợp nhất với loại tài liệu của NAPAS mà bạn định tải lên:
+     - **General / Naive**: Phù hợp cho các văn bản quy chế, quy định hành chính, chính sách nhân sự hoặc quy trình vận hành chung (văn bản chủ yếu là các đoạn văn xuôi liền mạch).
+     - **Table**: Đặc biệt khuyên dùng cho các tài liệu đặc tả kỹ thuật, bảng mã lỗi giao dịch, bảng phí dịch vụ, hoặc danh sách BIN thẻ ngân hàng (chứa nhiều bảng biểu, cột và dòng). RAGFlow sẽ phân tích cấu trúc bảng để LLM đọc đúng hàng ngang/cột dọc, tránh việc đọc lộn xộn thông tin.
+     - **Q&A**: Tối ưu cho tài liệu hỗ trợ khách hàng, tài liệu đào tạo nội bộ dạng FAQ hoặc sổ tay hướng dẫn xử lý sự cố. RAGFlow sẽ tự động chuyển đổi văn bản thành các cặp câu hỏi-đáp để khớp cực nhanh với câu hỏi thực tế của người dùng.
+     - **Manual**: Cho phép tự phân mảnh và căn chỉnh thủ công (tốn thời gian, chỉ dùng khi cần độ chính xác tuyệt đối cho một số văn bản đặc thù).
+     - **Paper / Book**: Chỉ nên dùng khi bạn tải lên sách hoặc bài báo nghiên cứu dài.
+4. Nhấn **"Create"** để tạo cơ sở tri thức.
+
+> 💡 **Kinh nghiệm thực tế:** Bạn nên tạo **nhiều cơ sở tri thức (Knowledge Base) riêng biệt** tùy theo loại tài liệu (ví dụ: 1 KB dạng `Table` cho đặc tả kỹ thuật, 1 KB dạng `General` cho quy chế). Khi tạo App bên Dify, bạn hoàn toàn có thể liên kết đồng thời nhiều KB này vào để trợ lý AI có đầy đủ thông tin nhất!
 
 ### 2.4 Upload tài liệu
 
@@ -153,6 +184,34 @@ Người dùng → Chatbot Frontend → Dify API → RAGFlow API → Tài liệu
    - **Top N**: Số đoạn văn bản tham khảo (mặc định 6)
    - **Similarity Threshold**: Ngưỡng tương đồng (mặc định 0.2)
 4. Nhấn **"OK"** → Bắt đầu chat thử
+
+### 2.7 Kết nối RAGFlow làm bộ nhớ Tri thức ngoài cho Dify (External Knowledge Base)
+
+Để Dify (Bộ não suy luận) truy cập được tài liệu đã xử lý tối ưu từ RAGFlow (Bộ nhớ tri thức):
+
+1. **Lấy API Key và Dataset ID từ RAGFlow:**
+   - **API Key**: Trên RAGFlow UI, nhấn avatar ở góc phải → chọn **API Key** → **Create new key** và lưu lại key (dạng `ragflow-xxxxxxxx`).
+   - **Dataset ID**: Vào menu **Knowledge** → click vào Knowledge Base bạn đã tạo → Chọn tab **Settings** → Copy chuỗi **Dataset ID** (định dạng UUID).
+
+2. **Khai báo API Kết nối trong Dify:**
+   - Mở Dify UI → Vào menu **Knowledge** ở bên trái → Chọn tab **External Knowledge API** ở trên cùng → Click **Add**.
+   - Điền thông tin:
+     - **Name**: `RAGFlow Local`
+     - **API Endpoint**: `http://127.0.0.1:9380/api/v1/dify`
+     - **API Key**: Điền RAGFlow API Key của bạn.
+   - Nhấn **Save**.
+
+3. **Liên kết Cơ sở tri thức ngoài:**
+   - Quay lại tab **Knowledge** chính của Dify → Click nút **Connect to an External Knowledge Base**.
+   - Điền thông tin:
+     - **Name**: Tên hiển thị (ví dụ: `napas-rag-quality-mvp`)
+     - **External KB API**: Chọn `RAGFlow Local`
+     - **External KB ID**: Dán **Dataset ID** của RAGFlow.
+   - Nhấn **Save**.
+
+4. **Gán vào App Dify:**
+   - Vào mục **Studio** → Mở App Dify của bạn (ví dụ: "Trợ lý NAPAS").
+   - Tìm mục **Context (Ngữ cảnh)** → Click **Add** → Chọn Cơ sở tri thức ngoài `napas-rag-quality-mvp` vừa liên kết.
 
 ---
 
@@ -324,3 +383,48 @@ sudo systemctl start mysql
 | Dify API | `http://<SERVER_IP>:5001` | Backend API |
 | RAGFlow API | `http://<SERVER_IP>:9380` | Backend API |
 | Qdrant Dashboard | `http://<SERVER_IP>:6333/dashboard` | Vector store UI |
+
+---
+
+## Phần 6: Xử lý sự cố thường gặp (Troubleshooting)
+
+### 6.1 Lỗi 403 Forbidden khi Setup / Init Dify
+**Triệu chứng:** Khi truy cập trang cài đặt Dify hoặc nhập password khởi tạo, hệ thống trả về lỗi `403 Forbidden (authorization_error)`.
+**Nguyên nhân:** Database PostgreSQL của Dify rơi vào trạng thái "nửa vời" (đã có Workspace/Tài khoản nhưng chưa hoàn thành ghi nhận setup vào bảng `dify_setups`), hoặc bị lỗi trong quá trình migration.
+**Cách xử lý (Reset và Cài đặt lại từ đầu):**
+1. Dừng các dịch vụ và giải phóng cổng:
+   ```bash
+   cd ~/chatbot
+   ./scripts/ubuntu/manage.sh stop
+   ```
+2. Khởi động riêng Postgres:
+   ```bash
+   ./scripts/ubuntu/manage.sh restart postgres
+   ```
+3. Cưỡng chế xóa và tạo lại cơ sở dữ liệu `dify`:
+   ```bash
+   su postgres -c "psql -p 5433 -c 'DROP DATABASE IF EXISTS dify WITH (FORCE);'"
+   su postgres -c "psql -p 5433 -c 'CREATE DATABASE dify;'"
+   ```
+4. Chạy lại DB Migration:
+   ```bash
+   cd ~/chatbot/runtime/dify/api
+   uv run flask db upgrade
+   ```
+5. Khởi động lại toàn bộ hệ thống:
+   ```bash
+   cd ~/chatbot
+   ./scripts/ubuntu/manage.sh start
+   ```
+
+### 6.2 Lỗi DB Migration trùng lặp Index / Hàm `uuidv7`
+**Triệu chứng:** Khi chạy `flask db upgrade` trên database mới, gặp lỗi:
+- `ProgrammingError: (psycopg2.errors.DuplicateTable) relation "workflow_node_executions_tenant_id_idx" already exists`
+- `ProgrammingError: (psycopg2.errors.AmbiguousFunction) function name "uuidv7" is not unique`
+
+**Nguyên nhân & Cách xử lý:**
+Dify có sự mâu thuẫn trong file migration khi cài đặt trên hệ thống PostgreSQL mới (Postgres 17+ đã tích hợp sẵn hàm `uuidv7` ở hệ thống hoặc extension):
+1. **Lỗi trùng Index:** Bọc lệnh tạo index trong `migrations/versions/*_workflow_draft_varaibles_add_node_execution_id.py` bằng khối lệnh `try...except` để bỏ qua nếu index đã được tạo tự động bởi Model.
+2. **Lỗi trùng hàm `uuidv7`:** Bỏ qua hoàn toàn việc tạo hàm `uuidv7()` trong `migrations/versions/*_add_uuidv7_function_in_sql.py` và chỉ giữ lại việc tạo hàm `uuidv7_boundary` bằng câu lệnh `CREATE OR REPLACE FUNCTION` an toàn.
+*(⚠️ Hệ thống hiện tại của bạn đã được cập nhật bản vá này trong mã nguồn nên các lượt deploy/migrate sau này sẽ không còn gặp lỗi này nữa).*
+

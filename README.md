@@ -2,43 +2,39 @@
 
 Dự án Hệ thống Chatbot Thông minh dành cho NAPAS ứng dụng kiến trúc **Agentic RAG (Retrieval-Augmented Generation)** tiên tiến, kết hợp khả năng suy luận tự động của AI Agents với hệ thống truy xuất tài liệu chuyên sâu.
 
-## 🛠 Kiến trúc Hệ thống (Tech Stack)
+## 🛠 Kiến trúc Hệ thống (v3.3 — Full Dify)
 
-Hệ thống được thiết kế theo kiến trúc Microservices hiện đại, tối ưu cho cả môi trường Windows (phát triển) và Ubuntu Linux (triển khai):
+Hệ thống sử dụng kiến trúc **Full Dify** (monolithic), tối ưu cho vài tài liệu kỹ thuật:
 
-*   **Frontend (Giao diện):** Next.js 15, React, Tailwind CSS, TypeScript.
-*   **AI Orchestration (Điều phối Agent):** Dify v0.14+
-*   **Document Parsing & RAG Engine:** RAGFlow
-*   **Databases & Middleware:** 
-    *   **Vector Database:** Qdrant
-    *   **Relational Database:** PostgreSQL (Dify), MySQL (RAGFlow)
-    *   **Search Engine:** Elasticsearch
-    *   **Object Storage:** MinIO
+*   **Frontend (Giao diện):** Next.js 16, React, Tailwind CSS, TypeScript.
+*   **AI Orchestration + RAG Engine:** Dify v0.14+ (Chatflow 2 nhánh + Knowledge Base)
+*   **Databases & Middleware:**
+    *   **Vector Database:** Qdrant (Hybrid Search: vector + BM25)
+    *   **Relational Database:** PostgreSQL (Dify)
     *   **Cache:** Redis
 
 ## 🚀 Hướng dẫn Triển khai (Deployment)
 
-Dự án hỗ trợ chạy Native (không dùng Docker) để tận dụng tối đa tài nguyên phần cứng. Chọn hệ điều hành tương ứng để xem hướng dẫn chi tiết:
+Dự án hỗ trợ chạy Native (không dùng Docker) để tận dụng tối đa tài nguyên phần cứng.
 
-### 1. Dành cho Ubuntu Server (Production / VPS)
+### Ubuntu Server (Production / VPS) — Khuyên dùng
 
-Môi trường khuyên dùng để triển khai hệ thống thực tế. Toàn bộ quá trình cài đặt được tự động hóa thông qua công cụ quản lý trạng thái thông minh `manage.sh`.
+👉 **[Xem Quick Start v3.3](./scripts/ubuntu/QUICKSTART-V3.3.md)**
 
-👉 **[Xem Hướng dẫn Cài đặt trên Ubuntu](./scripts/ubuntu/README.md)**
+```bash
+# Quick setup
+git clone <repo-url> ~/chatbot && cd ~/chatbot
+chmod +x scripts/ubuntu/*.sh
+cp scripts/ubuntu/stack.v3.3.json scripts/ubuntu/stack.example.json
+./scripts/ubuntu/manage.sh install
+./scripts/ubuntu/manage.sh start
+```
 
-### 2. Dành cho Windows (Local Development)
+### Windows (Local Development)
 
-Môi trường dành cho lập trình viên phát triển trực tiếp trên máy cá nhân, sử dụng PowerShell script để tự động hóa cài đặt.
-
-👉 **Mở PowerShell dưới quyền Admin và chạy:**
 ```powershell
-# Chạy script bootstrap để kiểm tra môi trường và tạo file config
 .\scripts\windows\bootstrap.ps1
-
-# Cài đặt tự động các Middleware (Postgres, Qdrant...)
 .\scripts\windows\install-middleware.ps1 -All
-
-# Khởi động toàn bộ dự án
 .\scripts\windows\start-stack.ps1
 ```
 
@@ -46,10 +42,11 @@ Môi trường dành cho lập trình viên phát triển trực tiếp trên m�
 
 *   `/frontend`: Mã nguồn giao diện Chatbot (Next.js).
 *   `/scripts`: Bộ script tự động hóa cài đặt cho Windows và Ubuntu.
-*   `/runtime`: Thư mục (bị ẩn khỏi Git) chứa toàn bộ mã nguồn clone của Dify, RAGFlow và dữ liệu các Database sinh ra trong quá trình chạy.
+*   `/scripts/preprocess_multimodal.py`: Pipeline extract ảnh → Vision describe → Markdown.
+*   `/runtime`: Thư mục (bị ẩn khỏi Git) chứa mã nguồn Dify và dữ liệu Database.
 *   `/docs`: Tài liệu thiết kế kiến trúc và kế hoạch triển khai.
 
 ## ⚠️ Lưu ý Quan trọng
 
-*   **Bảo mật:** Không bao giờ push thư mục `runtime/` lên Git vì nó chứa toàn bộ mã nguồn hệ thống thứ 3 và các cơ sở dữ liệu nhạy cảm. Thư mục này đã được loại trừ tự động trong `.gitignore`.
-*   **Cổng mạng (Ports):** Hệ thống sử dụng rất nhiều cổng (3000, 5001, 5002, 5433, 6333, 6379...). Vui lòng đảm bảo các cổng này không bị ứng dụng khác chiếm dụng trước khi khởi động dự án.
+*   **Bảo mật:** Không bao giờ push thư mục `runtime/` lên Git vì nó chứa mã nguồn hệ thống thứ 3 và dữ liệu nhạy cảm. Đã được loại trừ trong `.gitignore`.
+*   **Cổng mạng (Ports):** Hệ thống sử dụng các cổng: 3000 (Chatbot), 3001 (Dify Web), 5001 (Dify API), 5002 (Plugin Daemon), 5433 (Postgres), 6333 (Qdrant), 6379 (Redis).
