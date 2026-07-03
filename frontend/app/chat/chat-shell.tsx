@@ -269,10 +269,10 @@ export function ChatShell({
               </p>
               <div className="grid w-full max-w-2xl grid-cols-1 gap-4 md:grid-cols-2 text-left">
                 {[
-                  { icon: '📋', text: 'Tóm tắt quy trình phát hành thẻ NAPAS.' },
-                  { icon: '🔧', text: 'Các lỗi giao dịch phổ biến và cách xử lý?' },
-                  { icon: '🔒', text: 'Chính sách bảo mật cho ứng dụng ví điện tử?' },
-                  { icon: '🔗', text: 'Chuẩn kết nối API cho ngân hàng thành viên?' }
+                  { icon: '🛡️', text: 'Luồng xác thực 3DS2 (Frictionless Flow) hoạt động như thế nào?' },
+                  { icon: '🔧', text: 'Cách xử lý giao dịch bị từ chối (Decline) trong 3DS2?' },
+                  { icon: '📄', text: 'Cấu trúc thông điệp AReq/ARes chuẩn EMV 3DS?' },
+                  { icon: '📱', text: 'Hướng dẫn tích hợp SDK 3DS2 cho Mobile App?' }
                 ].map((prompt, i) => (
                   <button
                     key={i}
