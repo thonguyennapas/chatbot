@@ -349,7 +349,7 @@ function MessageItem({ message, user }: { message: Message; user: { username: st
   const isUser = message.role === 'user'
 
   return (
-    <div className={`flex w-full py-6 md:px-6 px-4 animate-slide-up`} style={{ background: isUser ? 'transparent' : 'var(--bg-surface)' }}>
+    <div className={`flex w-full py-6 md:px-6 px-4 mb-4 rounded-3xl animate-slide-up`} style={{ background: isUser ? 'transparent' : 'var(--bg-surface)' }}>
       <div className="mx-auto flex w-full max-w-3xl gap-4 md:gap-6">
         <div className="shrink-0 pt-1">
           {isUser ? (

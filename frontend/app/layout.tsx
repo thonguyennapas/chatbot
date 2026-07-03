@@ -3,7 +3,7 @@ import { ThemeProvider } from '@/app/lib/theme-provider'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'NAPAS Internal Chatbot — Trợ lý tài liệu nội bộ',
+  title: 'NAPAS Internal Chatbot - Trợ lý tài liệu nội bộ',
   description:
     'Chatbot nội bộ NAPAS sử dụng Agentic RAG để tìm kiếm và trả lời dựa trên tài liệu nội bộ. Mỗi câu trả lời kèm trích dẫn nguồn.',
   robots: 'noindex, nofollow',
