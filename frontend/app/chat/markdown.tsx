@@ -7,10 +7,10 @@ export function renderMarkdown(content: string) {
   if (!content) return null
 
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      className="space-y-4"
-      components={{
+    <div className="space-y-4">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
         code({ node, className, children, ...props }: any) {
           const match = /language-(\w+)/.exec(className || '')
           
@@ -74,6 +74,7 @@ export function renderMarkdown(content: string) {
     >
       {content}
     </ReactMarkdown>
+    </div>
   )
 }
 
