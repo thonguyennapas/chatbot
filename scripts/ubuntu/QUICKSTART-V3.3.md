@@ -78,14 +78,19 @@ Dify Admin → Settings → Model Provider:
 3. Thêm Reranking Model (xem mục bên dưới)
 ```
 
-### Bước 3: Tạo Knowledge Base
-```
-Dify Admin → Knowledge → Create Knowledge Base:
-   Name: napas_tai_lieu_ky_thuat
-   Chunking: Parent-Child   ← ⚠️ KHÔNG ĐỔI ĐƯỢC SAU KHI TẠO
-   Index: High Quality
-   Embedding: text-embedding-3-large
-   Search: Hybrid Search    ← BẮT BUỘC
+### Bước 3: Tạo Knowledge Base (Ví dụ: Tài liệu 3DS2)
+
+1. Đăng nhập Dify Admin → chọn tab **Knowledge** (Kiến thức) → **Create Knowledge Base**.
+2. Kéo thả tài liệu kỹ thuật vào (PDF, DOCX, TXT, CSV, Markdown). *Lưu ý: Nếu có bảng mã lỗi Excel, nên convert sang CSV hoặc Markdown để parse chuẩn nhất.*
+3. Cấu hình phân tích văn bản:
+```text
+   Name: napas_3ds2_knowledge_base
+   Index Mode: High Quality (Dùng Embedding Model để vector hóa lưu vào Qdrant)
+   Chunking Setting: Custom (Tùy chỉnh)
+      - Chunk size: 800 - 1000 tokens (Giúp bối cảnh kỹ thuật không bị đứt đoạn)
+      - Chunk overlap: 150 - 200 tokens
+   Embedding Model: text-embedding-3-large
+   Search Setting: Hybrid Search (BẮT BUỘC để tìm kiếm chính xác)
    Reranking: Enable
 ```
 
@@ -113,23 +118,27 @@ Dify Admin → Knowledge → Create Knowledge Base:
 3. Upload file .md (output) vào CÙNG Knowledge Base
 ```
 
-### Bước 5: Tạo Chatflow
-```
-Dify Admin → Studio → Create App → Chatflow:
+### Bước 5: Tạo Chatflow & Link Knowledge Base
 
+1. **Dify Admin → Studio → Create App → Chatflow**
+2. Cấu hình luồng cơ bản:
+
+```text
    [Start]
      │
      ▼
-   [Question Classifier] ← Claude 4.6 Sonnet
+   [Question Classifier] ← Claude 4.6 Sonnet (Phân loại câu hỏi)
      │
-     ├── Class 1: "Câu hỏi về tài liệu kỹ thuật"
+     ├── Class 1: "Câu hỏi về 3DS2, tài liệu kỹ thuật"
      │     │
      │     ▼
-     │   [Knowledge Retrieval] ← napas_tai_lieu_ky_thuat
-     │     │                     top_k=8, score_threshold=0.4
+     │   [Knowledge Retrieval] ← Chọn Context: napas_3ds2_knowledge_base
+     │     │                     (top_k=8, score_threshold=0.4)
      │     ▼
      │   [LLM Summarizer] ← Claude 4.6 Sonnet, temp=0.2
-     │     │
+     │     │                (Prompt: "Bạn là Trợ lý AI nội bộ của NAPAS chuyên về 3D Secure 2.0. 
+     │     │                 Hãy dựa vào bối cảnh (Context) để trả lời. Trình bày bằng Markdown, 
+     │     │                 sử dụng bảng biểu nếu cần thiết.")
      │     ▼
      │   [Answer]
      │
