@@ -16,15 +16,16 @@ export default function LoginPage() {
         <div className="mb-8 text-center">
           <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl"
             style={{
-              background: 'linear-gradient(135deg, #1B3A73, #00A3E0)',
-              boxShadow: '0 8px 24px rgba(27, 58, 115, 0.3)',
+              background: '#FFFFFF',
+              boxShadow: '0 8px 24px rgba(27, 58, 115, 0.2)',
+              border: '1px solid var(--border-color)',
             }}
           >
             <img
               src="/logo.png"
               alt="NAPAS Logo"
               className="h-14 w-14"
-              style={{ objectFit: 'contain', filter: 'brightness(2)' }}
+              style={{ objectFit: 'contain' }}
             />
           </div>
           <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>
