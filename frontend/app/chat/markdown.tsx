@@ -1,65 +1,80 @@
 import React from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { IconCopy, IconCheck } from './icons'
 
 export function renderMarkdown(content: string) {
   if (!content) return null
 
-  // Split by code blocks first, then process inline formatting
-  const blocks = content.split(/(```[\s\S]*?```)/)
-  
-  return blocks.map((block, i) => {
-    if (block.startsWith('```') && block.endsWith('```')) {
-      const lines = block.slice(3, -3).split('\n')
-      const lang = lines[0].trim()
-      const code = lines.slice(1).join('\n')
-      return (
-        <div key={i} className="group relative my-4 overflow-hidden rounded-lg border" style={{ borderColor: 'var(--border-color)' }}>
-          {lang && (
-            <div className="flex items-center justify-between px-4 py-1.5 text-xs font-medium" style={{ background: 'var(--bg-surface-hover)', color: 'var(--text-secondary)' }}>
-              <span>{lang}</span>
-              <CopyButton text={code} />
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      className="space-y-4"
+      components={{
+        code({ node, className, children, ...props }: any) {
+          const match = /language-(\w+)/.exec(className || '')
+          
+          if (!match) {
+            return (
+              <code className="px-1.5 py-0.5 rounded text-sm" style={{ background: 'var(--code-bg)', color: 'var(--accent-secondary)' }} {...props}>
+                {children}
+              </code>
+            )
+          }
+
+          const lang = match[1]
+          const codeStr = String(children).replace(/\n$/, '')
+
+          return (
+            <div className="group relative my-4 overflow-hidden rounded-lg border" style={{ borderColor: 'var(--border-color)' }}>
+              <div className="flex items-center justify-between px-4 py-1.5 text-xs font-medium" style={{ background: 'var(--bg-surface-hover)', color: 'var(--text-secondary)' }}>
+                <span>{lang}</span>
+                <CopyButton text={codeStr} />
+              </div>
+              <pre className="overflow-x-auto p-4 text-sm" style={{ background: 'var(--code-bg)', color: 'var(--text-primary)' }}>
+                <code className={className} {...props}>
+                  {children}
+                </code>
+              </pre>
             </div>
-          )}
-          {!lang && (
-            <div className="absolute right-2 top-2 z-10 opacity-0 transition-opacity group-hover:opacity-100">
-               <CopyButton text={code} />
+          )
+        },
+        img({ node, src, alt, ...props }: any) {
+          return <ChatImage src={src || ''} alt={alt || ''} />
+        },
+        table({ node, ...props }: any) {
+          return (
+            <div className="overflow-x-auto my-4 rounded-lg border" style={{ borderColor: 'var(--border-color)' }}>
+              <table className="min-w-full border-collapse text-sm text-left" {...props} />
             </div>
-          )}
-          <pre className="overflow-x-auto p-4 text-sm" style={{ background: 'var(--code-bg)', color: 'var(--text-primary)' }}>
-            <code>{code}</code>
-          </pre>
-        </div>
-      )
-    }
-
-    // Inline formatting
-    let html = block
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/`(.*?)`/g, '<code class="px-1.5 py-0.5 rounded text-sm" style="background: var(--code-bg); color: var(--accent-secondary)">$1</code>')
-
-    // Parse lines — handle images, lists, and paragraphs
-    const lines = html.split('\n')
-    const renderedLines = lines.map((line, j) => {
-      // Image: ![alt](src)
-      const imgMatch = line.match(/!\[([^\]]*)\]\(([^)]+)\)/)
-      if (imgMatch) {
-        const alt = imgMatch[1]
-        const src = imgMatch[2]
-        return <ChatImage key={j} src={src} alt={alt} />
-      }
-
-      if (line.trim().startsWith('- ')) {
-        return <li key={j} className="ml-4 list-disc marker:text-gray-500" dangerouslySetInnerHTML={{ __html: line.replace(/^- /, '') }} />
-      }
-      if (/^\d+\.\s/.test(line.trim())) {
-        return <li key={j} className="ml-4 list-decimal marker:text-gray-500" dangerouslySetInnerHTML={{ __html: line.replace(/^\d+\.\s/, '') }} />
-      }
-      return <p key={j} className="min-h-[1.5rem]" dangerouslySetInnerHTML={{ __html: line }} />
-    })
-
-    return <div key={i} className="space-y-2">{renderedLines}</div>
-  })
+          )
+        },
+        th({ node, ...props }: any) {
+          return <th className="border-b px-4 py-3 font-semibold" style={{ borderColor: 'var(--border-color)', background: 'var(--bg-surface-hover)', color: 'var(--text-primary)' }} {...props} />
+        },
+        td({ node, ...props }: any) {
+          return <td className="border-b px-4 py-3" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }} {...props} />
+        },
+        blockquote({ node, ...props }: any) {
+          return <blockquote className="border-l-4 pl-4 py-2 my-4 italic" style={{ borderColor: 'var(--accent-primary)', color: 'var(--text-secondary)', background: 'var(--bg-surface-hover)' }} {...props} />
+        },
+        ul({ node, ...props }: any) {
+          return <ul className="ml-5 my-2 list-disc space-y-1" style={{ color: 'var(--text-primary)' }} {...props} />
+        },
+        ol({ node, ...props }: any) {
+          return <ol className="ml-5 my-2 list-decimal space-y-1" style={{ color: 'var(--text-primary)' }} {...props} />
+        },
+        h1({ node, ...props }: any) { return <h1 className="text-2xl font-bold mt-6 mb-4" style={{ color: 'var(--text-primary)' }} {...props} /> },
+        h2({ node, ...props }: any) { return <h2 className="text-xl font-bold mt-5 mb-3" style={{ color: 'var(--text-primary)' }} {...props} /> },
+        h3({ node, ...props }: any) { return <h3 className="text-lg font-semibold mt-4 mb-2" style={{ color: 'var(--text-primary)' }} {...props} /> },
+        a({ node, ...props }: any) {
+          return <a className="underline hover:opacity-80 transition-opacity" style={{ color: 'var(--accent-primary)' }} target="_blank" rel="noopener noreferrer" {...props} />
+        }
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  )
 }
 
 function CopyButton({ text }: { text: string }) {
