@@ -252,8 +252,8 @@ export function ChatShell({
           <div className="flex-1 truncate font-medium" style={{ color: 'var(--text-primary)' }}>
             {active?.title ?? 'Napas Internal Chatbot'}
           </div>
-          <div className="rounded-full px-3 py-1 text-xs font-medium" style={{ background: 'var(--bg-surface-hover)', color: 'var(--accent-secondary)' }}>
-            Napas Agent
+          <div className="rounded-full px-3 py-1 text-xs font-medium" style={{ background: 'var(--bg-surface-hover)', color: 'var(--accent-primary)' }}>
+            NAPAS Agent
           </div>
         </header>
 
@@ -329,7 +329,7 @@ export function ChatShell({
               title="Gửi tin nhắn"
               className="absolute bottom-2.5 right-2.5 flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               style={{
-                background: draft.trim() ? 'linear-gradient(135deg, var(--accent-primary), var(--accent-cta))' : 'var(--bg-surface-hover)',
+                background: draft.trim() ? '#00A3E0' : 'var(--bg-surface-hover)',
                 color: draft.trim() ? '#fff' : 'var(--text-muted)'
               }}
             >

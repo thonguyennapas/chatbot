@@ -32,3 +32,6 @@ build/
 .agent/
 .claude/
 .gemini/
+
+# docs
+input/
