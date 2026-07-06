@@ -24,6 +24,18 @@ if [ ! -f "$API_ENV" ] && [ -f "$API_EXAMPLE" ]; then
     
     # Plugin Daemon settings
     sed -i 's/^PLUGIN_DAEMON_URL=.*/PLUGIN_DAEMON_URL=http:\/\/127.0.0.1:5002/' "$API_ENV"
+
+    # Console URL — Dify Web chạy trên 3001, không phải 3000 (mặc định Dify)
+    sed -i 's/^CONSOLE_WEB_URL=.*/CONSOLE_WEB_URL=http:\/\/localhost:3001/' "$API_ENV"
+    sed -i 's/^CONSOLE_CORS_ALLOW_ORIGINS=.*/CONSOLE_CORS_ALLOW_ORIGINS=http:\/\/localhost:3001/' "$API_ENV"
+
+    # SECRET_KEY — phải cố định, nếu không tokens bị reset mỗi lần restart
+    EXISTING_KEY=$(grep -oP '^SECRET_KEY=\K.+' "$API_ENV" 2>/dev/null || true)
+    if [ -z "$EXISTING_KEY" ] || echo "$EXISTING_KEY" | grep -q "^sk-"; then
+        NEW_KEY=$(openssl rand -base64 42)
+        sed -i "s|^SECRET_KEY=.*|SECRET_KEY=${NEW_KEY}|" "$API_ENV"
+        echo "  Generated new SECRET_KEY for Dify API."
+    fi
 fi
 
 # Configure Dify Web env
