@@ -58,7 +58,7 @@ except ImportError:
 
 # ─── Constants ───────────────────────────────────────────────────────────────
 
-IMAGE_BASE_URL = "/docs/images"  # URL path trên Next.js website
+IMAGE_BASE_URL_DEFAULT = "/docs"  # URL path trên Next.js website
 MIN_IMAGE_SIZE = 5000            # bytes — bỏ qua ảnh quá nhỏ (icons, bullets)
 VECTOR_DRAWING_THRESHOLD = 10   # Số drawings tối thiểu để trigger screenshot
 MAX_EMBEDDED_FOR_SCREENSHOT = 2  # Nếu ít hơn N embedded images → screenshot trang
@@ -473,6 +473,7 @@ def create_full_markdown(
     api_url: str = "https://openrouter.ai/api/v1/chat/completions",
     model: str = "google/gemini-2.5-pro",
     table_model: str | None = None,
+    project: str = "general",
 ) -> None:
     """Tạo file .md ĐẦY ĐỦ NỘI DUNG tài liệu: text + ảnh + bảng + diagram.
 
@@ -485,6 +486,7 @@ def create_full_markdown(
     """
     effective_table_model = table_model or model
     doc_slug = doc_name.replace(" ", "_").lower()
+    image_base_url = f"{IMAGE_BASE_URL_DEFAULT}/{project}"
 
     # Build lookup: page_num → text content
     text_by_page: dict[int, str] = {tp["page"]: tp["text"] for tp in text_pages}
@@ -532,7 +534,7 @@ def create_full_markdown(
                 )
 
                 img_filename = Path(img["file"]).name
-                img_url = f"{IMAGE_BASE_URL}/{doc_slug}/{img_filename}"
+                img_url = f"{image_base_url}/{doc_slug}/{img_filename}"
 
                 class_label = {"table": "Bảng", "diagram": "Sơ đồ", "embedded": "Hình ảnh"}.get(page_class, "Hình ảnh")
                 output.append(f"### {class_label} — Trang {img['page']}")
@@ -550,11 +552,11 @@ def create_full_markdown(
 # ─── Step 4: Copy images to Next.js public folder ───────────────────────────
 
 def copy_images_to_public(
-    images: list[dict[str, Any]], doc_name: str, public_dir: str
+    images: list[dict[str, Any]], doc_name: str, public_dir: str, project: str = "general"
 ) -> None:
-    """Copy ảnh gốc vào /public/docs/images/{doc_slug}/ để frontend hiển thị."""
+    """Copy ảnh gốc vào /public/docs/{project}/{doc_slug}/ để frontend hiển thị."""
     doc_slug = doc_name.replace(" ", "_").lower()
-    target_dir = Path(public_dir) / "docs" / "images" / doc_slug
+    target_dir = Path(public_dir) / "docs" / project / doc_slug
     target_dir.mkdir(parents=True, exist_ok=True)
 
     for img in images:
@@ -612,6 +614,7 @@ def process_single_file(
     scan_only: bool,
     no_filter: bool,
     temp_dir: str | None,
+    project: str = "general",
 ) -> dict[str, Any]:
     """Process a single PDF/DOCX file. Returns stats dict."""
 
@@ -622,6 +625,7 @@ def process_single_file(
     print(f"Pre-processing: {doc_name}")
     print(f"   Input:  {input_path}")
     print(f"   Output: {output_dir}")
+    print(f"   Project: {project}")
     print(f"   Model (diagram): {vision_model}")
     print(f"   Model (table):   {table_model or vision_model}")
     print(f"   Filter: {'OFF (--no-filter)' if no_filter else 'ON'}")
@@ -650,7 +654,7 @@ def process_single_file(
     # Step 2: Copy images to public
     if images:
         print("\nStep 2: Copying images to public folder...")
-        copy_images_to_public(images, doc_name, public_dir)
+        copy_images_to_public(images, doc_name, public_dir, project=project)
     else:
         print("\nStep 2: No images to copy (text-only document).")
 
@@ -659,6 +663,7 @@ def process_single_file(
 
     if skip_vision:
         print("Step 3: Skipping Vision API (--skip-vision) — text-only output")
+        image_base_url = f"{IMAGE_BASE_URL_DEFAULT}/{project}"
         output = [f"# {doc_name}\n"]
         # Write text pages
         for tp in text_pages:
@@ -670,7 +675,7 @@ def process_single_file(
             page_class = img.get("page_class", "embedded")
             class_label = {"table": "Bảng", "diagram": "Sơ đồ", "embedded": "Hình ảnh"}.get(page_class, "Hình ảnh")
             img_filename = Path(img["file"]).name
-            img_url = f"{IMAGE_BASE_URL}/{doc_slug}/{img_filename}"
+            img_url = f"{image_base_url}/{doc_slug}/{img_filename}"
             output.append(f"### {class_label} — Trang {img['page']}")
             output.append(f"![{doc_name} - Trang {img['page']}]({img_url})")
             output.append("[Chưa có mô tả — chạy lại không có --skip-vision]\n")
@@ -687,6 +692,7 @@ def process_single_file(
             doc_name=doc_name,
             output_path=md_output,
             api_key=api_key,
+            project=project,
             api_url=api_url,
             model=vision_model,
             table_model=table_model,
@@ -697,7 +703,7 @@ def process_single_file(
     print("DONE!")
     print(f"   Full Markdown: {md_output}")
     if images:
-        print(f"   Images:        {public_dir}/docs/images/{doc_slug}/")
+        print(f"   Images:        {public_dir}/docs/{project}/{doc_slug}/")
     print()
     print("Next steps:")
     print(f"   1. Upload {md_output} vào Dify Knowledge Base")
@@ -762,8 +768,8 @@ Examples:
     --api-key "sk-or-..."
 
 Output:
-  ./output/<doc_name>_images.md              -> Upload to Dify KB
-  ./frontend/public/docs/images/<doc_name>/  -> Images served on web
+  ./output/<doc_name>_full.md                    -> Upload to Dify KB
+  ./frontend/public/docs/<project>/<doc_name>/   -> Images served on web
         """,
     )
 
@@ -781,6 +787,7 @@ Output:
     parser.add_argument("--table-model", default=None, help="Vision model for tables (default: uses --vision-model)")
     parser.add_argument("--skip-vision", action="store_true", help="Skip Vision API (extract images only, no description)")
     parser.add_argument("--scan-only", action="store_true", help="Classify + stats only, no screenshots/Vision")
+    parser.add_argument("--project", default="general", help="Project name for organizing images (e.g., 3ds2, qr_pay). Images saved to /docs/<project>/<doc_name>/")
     parser.add_argument("--no-filter", action="store_true", help="Disable boilerplate filter (screenshot all pages)")
     parser.add_argument("--temp-dir", default=None, help="Temp directory for extracted images (default: output-dir/temp)")
 
@@ -834,6 +841,7 @@ Output:
             scan_only=args.scan_only,
             no_filter=args.no_filter,
             temp_dir=args.temp_dir,
+            project=args.project,
         )
         all_stats.append((Path(filepath).name, stats))
 

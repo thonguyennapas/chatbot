@@ -186,6 +186,7 @@ Kéo thả file PDF/DOCX/TXT/CSV/Markdown vào.
    # Scan trước để xem thống kê + ước tính chi phí
    python3 scripts/preprocess_multimodal.py \
      --input-dir "./input" \
+     --project "3ds2" \
      --api-key "dummy" \
      --scan-only
 
@@ -194,13 +195,16 @@ Kéo thả file PDF/DOCX/TXT/CSV/Markdown vào.
      --input-dir "./input" \
      --output-dir "./output" \
      --public-dir "./frontend/public" \
+     --project "3ds2" \
      --api-key "sk-or-..." \
      --vision-model "google/gemini-2.5-flash" \
      --table-model "google/gemini-2.5-pro"
 
-   # Kết quả (mỗi file 1 output):
-   #   output/<tên_file>_full.md              → Upload vào Dify KB
-   #   frontend/public/docs/images/<tên_file>/ → Ảnh serve trên web
+   # Kết quả:
+   #   output/<tên_file>_full.md                    → Upload vào Dify KB
+   #   frontend/public/docs/3ds2/<tên_file>/        → Ảnh serve trên web
+   #
+   # Ví dụ project khác: --project "qr_pay", --project "tokenization"
 
 3. Trên Dify: upload CHỈ file .md (output) vào Knowledge Base
    → KHÔNG cần upload PDF gốc (file .md đã chứa đầy đủ text + mô tả bảng/diagram)
