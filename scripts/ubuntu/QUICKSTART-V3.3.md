@@ -99,19 +99,39 @@ Kéo thả file PDF/DOCX/TXT/CSV/Markdown vào.
 
 #### 3.2 Chunk Settings (Phân đoạn văn bản)
 
-| Setting | Giá trị khuyến nghị | Giải thích |
+⚠️ **Chunk Mode không đổi được sau khi tạo Knowledge Base.** Chọn kỹ.
+
+**So sánh 2 chế độ:**
+
+| | **General** | **Parent-child** |
 |---|---|---|
-| **Chunk Mode** | **General** | Phù hợp tài liệu kỹ thuật. `Parent-child` tốt hơn cho FAQ/đoạn ngắn. ⚠️ *Không đổi được sau khi tạo.* |
-| **Delimiter** | `\n\n` (mặc định) | Tách theo đoạn văn. Có thể dùng `\n` nếu muốn tách mịn hơn. |
-| **Max Chunk Length** | **800 – 1000** | Đủ dài để giữ nguyên ngữ cảnh bảng + đoạn kỹ thuật. |
+| **Cấu trúc** | Phẳng — tất cả chunk ngang hàng | Phân cấp — parent chứa child |
+| **Cách tìm** | Tìm chunk → trả chunk đó | Tìm child chunk (chính xác) → trả parent chunk (đầy đủ ngữ cảnh) |
+| **Khi nào dùng** | Tài liệu ngắn, FAQ, mỗi đoạn độc lập | Tài liệu dài, kỹ thuật, chi tiết nằm rải rác trong đoạn lớn |
+| **Khuyên dùng cho Napas** | ✅ Tài liệu mã lỗi, bảng tra cứu | ✅ Tài liệu spec EMVCo, API guide dài |
+
+**Cấu hình chi tiết (cho General mode):**
+
+| Setting | Giá trị | Giải thích |
+|---|---|---|
+| **Delimiter** | `\n\n` (mặc định) | Tách theo đoạn văn. Dùng `\n` nếu muốn mịn hơn. |
+| **Max Chunk Length** | **800 – 1000** | Đủ dài để giữ nguyên bảng + đoạn kỹ thuật. |
 | **Chunk Overlap** | **150 – 200** | Giữ liên tục ngữ nghĩa giữa các chunk liền kề. |
+
+**Cấu hình chi tiết (cho Parent-child mode):**
+
+| Setting | Giá trị | Giải thích |
+|---|---|---|
+| **Parent Chunk Length** | **1500 – 2000** | Chunk lớn chứa ngữ cảnh đầy đủ, trả về cho LLM. |
+| **Child Chunk Length** | **200 – 500** | Chunk nhỏ dùng để tìm kiếm chính xác. |
+| **Delimiter** | `\n\n` | Tách ở ranh giới đoạn văn. |
 
 #### 3.3 Index Method (Phương pháp lập chỉ mục)
 
-| Option | Chọn |
-|---|---|
-| **High Quality** ✅ | BẮT BUỘC — dùng Embedding Model để vector hóa, lưu vào Qdrant. Hỗ trợ Hybrid Search + Rerank. |
-| Economical | ❌ Không dùng — chỉ keyword search, chất lượng kém. |
+| Option | Chọn | Giải thích |
+|---|---|---|
+| **High Quality** | ✅ BẮT BUỘC | Dùng Embedding Model vector hóa → lưu vào Qdrant. Hỗ trợ Hybrid Search + Rerank. |
+| Economical | ❌ Không dùng | Chỉ keyword search, không hỗ trợ semantic, chất lượng kém. |
 
 #### 3.4 Embedding Model
 
@@ -120,16 +140,35 @@ Kéo thả file PDF/DOCX/TXT/CSV/Markdown vào.
 | **Model** | `text-embedding-3-large` (OpenAI) |
 | **Provider** | OpenAI provider đã thêm ở Bước 2 (hoặc qua OpenRouter) |
 
-> Nếu đổi model sau này → Dify tự re-embed toàn bộ tài liệu (chạy background, mất thời gian).
+> Nếu đổi model sau → Dify tự re-embed toàn bộ tài liệu (chạy background, mất thời gian).
 
 #### 3.5 Retrieval Settings (Cấu hình truy xuất)
 
+**So sánh 3 chế độ:**
+
+| Retrieval Mode | Cách hoạt động | Khi nào dùng |
+|---|---|---|
+| **Vector Search** | Tìm theo ngữ nghĩa (embedding similarity) | Câu hỏi tự nhiên, diễn đạt khác tài liệu |
+| **Full-Text Search** | Tìm theo keyword chính xác | Mã lỗi, tên field, ID cụ thể |
+| **Hybrid Search** ✅ | Kết hợp cả hai + trọng số điều chỉnh | **Khuyên dùng** — tốt nhất cho tài liệu kỹ thuật |
+
+**Cấu hình Hybrid Search:**
+
 | Setting | Giá trị khuyến nghị | Giải thích |
 |---|---|---|
-| **Retrieval Mode** | **Hybrid Search** ✅ | Kết hợp Vector Search (ngữ nghĩa) + Full-Text Search (keyword). Chính xác nhất cho tài liệu kỹ thuật. |
-| **Rerank Model** | **Enable** — `rerank-multilingual-v3.0` (Cohere) | Sắp xếp lại kết quả theo độ liên quan. Xem mục *Reranking* bên dưới để setup. |
+| **Semantic Weight** | **0.7** | Ưu tiên tìm theo ý nghĩa câu hỏi. |
+| **Keyword Weight** | **0.3** | "Lưới an toàn" cho mã lỗi, tên API, ID chính xác. |
 | **Top K** | **5 – 8** | Số chunk trả về cho LLM. Tăng nếu câu trả lời thiếu context. |
-| **Score Threshold** | **0.3 – 0.5** | Loại bỏ chunk dưới ngưỡng điểm. Tăng nếu câu trả lời chứa noise. |
+| **Score Threshold** | **0.3 – 0.5** | Loại chunk điểm thấp. Tăng nếu câu trả lời chứa noise. |
+
+> **Semantic 0.7 / Keyword 0.3** là mặc định tốt. Với tài liệu Napas (nhiều mã lỗi + error code), có thể thử **0.5 / 0.5** nếu thấy tìm mã lỗi kém.
+
+**Rerank Model (tùy chọn nhưng khuyên dùng):**
+
+| Option | Giải thích |
+|---|---|
+| **Weighted Score** (không cần Rerank) | Dùng trọng số semantic/keyword ở trên để xếp hạng. Miễn phí. |
+| **Rerank Model** ✅ (khuyên dùng) | Dùng model AI (Cohere `rerank-multilingual-v3.0`) để sắp xếp lại top kết quả. Chính xác hơn nhưng tốn thêm API call. Xem mục *Reranking* bên dưới để setup. |
 
 4. Nhấn **Save & Process** → Dify bắt đầu chunk + embed. Theo dõi tiến trình trên giao diện.
 
