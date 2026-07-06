@@ -446,12 +446,15 @@ def describe_image_with_vision(
                         ],
                     }
                 ],
-                "max_tokens": max_tokens,
+                "max_completion_tokens": max_tokens,
                 "temperature": 0.2,
             },
             timeout=180,
         )
-        response.raise_for_status()
+        if not response.ok:
+            print(f"  ❌ Vision API {response.status_code} cho {image_path}")
+            print(f"     Response: {response.text[:500]}")
+            return f"[LỖI: API trả về {response.status_code}]"
         data = response.json()
         return data["choices"][0]["message"]["content"]
     except requests.exceptions.RequestException as e:
