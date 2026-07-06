@@ -25,6 +25,11 @@ if [ ! -f "$API_ENV" ] && [ -f "$API_EXAMPLE" ]; then
     # Plugin Daemon settings
     sed -i 's/^PLUGIN_DAEMON_URL=.*/PLUGIN_DAEMON_URL=http:\/\/127.0.0.1:5002/' "$API_ENV"
 
+    # Redis — chạy không password, xóa default password từ .env.example
+    sed -i 's/^REDIS_PASSWORD=.*/REDIS_PASSWORD=/' "$API_ENV"
+    sed -i 's/^BROKER_USE_SSL=.*/BROKER_USE_SSL=false/' "$API_ENV"
+    sed -i 's/^CELERY_BROKER_URL=.*/CELERY_BROKER_URL=redis:\/\/localhost:6379\/1/' "$API_ENV"
+
     # Console URL — Dify Web chạy trên 3001, không phải 3000 (mặc định Dify)
     sed -i 's/^CONSOLE_WEB_URL=.*/CONSOLE_WEB_URL=http:\/\/localhost:3001/' "$API_ENV"
     sed -i 's/^CONSOLE_CORS_ALLOW_ORIGINS=.*/CONSOLE_CORS_ALLOW_ORIGINS=http:\/\/localhost:3001/' "$API_ENV"

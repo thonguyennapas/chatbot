@@ -66,6 +66,16 @@
       "startupTimeoutSeconds": 90
     },
     {
+      "name": "dify-worker",
+      "enabled": true,
+      "description": "Dify Celery Worker — background tasks: document indexing, embedding, mail.",
+      "workingDirectory": "runtime/dify/api",
+      "command": "bash",
+      "arguments": ["-c", "uv run celery -A app.celery worker -P gevent -c 1 --loglevel INFO -Q dataset,generation,mail,ops_trace,app_deletion"],
+      "port": 0,
+      "startupTimeoutSeconds": 30
+    },
+    {
       "name": "dify-plugin-daemon",
       "enabled": true,
       "description": "Dify Plugin Daemon v0.14+ — manages model plugins.",

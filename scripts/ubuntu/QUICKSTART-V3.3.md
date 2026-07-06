@@ -55,11 +55,12 @@ cd ~/chatbot
 
 # ===== BƯỚC 8: Kiểm tra =====
 ./scripts/ubuntu/manage.sh status
-# Cần 7 services RUNNING:
+# Cần 8 services RUNNING:
 #   ✅ redis (6379)
 #   ✅ postgres (5433)
 #   ✅ qdrant (6333)
 #   ✅ dify-api (5001)
+#   ✅ dify-worker (no port — background task processor)
 #   ✅ dify-plugin-daemon (5002)
 #   ✅ dify-web (3001)
 #   ✅ chatbot-frontend (3000)
