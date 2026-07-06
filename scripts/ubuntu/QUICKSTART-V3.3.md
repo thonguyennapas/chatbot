@@ -87,21 +87,51 @@ Dify Admin → Settings → Model Provider:
 3. Thêm Reranking Model (xem mục bên dưới)
 ```
 
-### Bước 3: Tạo Knowledge Base (Ví dụ: Tài liệu 3DS2)
+### Bước 3: Tạo Knowledge Base
 
-1. Đăng nhập Dify Admin → chọn tab **Knowledge** (Kiến thức) → **Create Knowledge Base**.
-2. Kéo thả tài liệu kỹ thuật vào (PDF, DOCX, TXT, CSV, Markdown). *Lưu ý: Nếu có bảng mã lỗi Excel, nên convert sang CSV hoặc Markdown để parse chuẩn nhất.*
-3. Cấu hình phân tích văn bản:
-```text
-   Name: napas_3ds2_knowledge_base
-   Index Mode: High Quality (Dùng Embedding Model để vector hóa lưu vào Qdrant)
-   Chunking Setting: Custom (Tùy chỉnh)
-      - Chunk size: 800 - 1000 tokens (Giúp bối cảnh kỹ thuật không bị đứt đoạn)
-      - Chunk overlap: 150 - 200 tokens
-   Embedding Model: text-embedding-3-large
-   Search Setting: Hybrid Search (BẮT BUỘC để tìm kiếm chính xác)
-   Reranking: Enable
-```
+Dify Admin → **Knowledge** tab → **Create Knowledge** (hoặc URL: `/datasets/create`)
+
+#### 3.1 Upload tài liệu
+
+Kéo thả file PDF/DOCX/TXT/CSV/Markdown vào.
+
+> **Lưu ý:** Bảng mã lỗi Excel nên convert sang CSV hoặc Markdown trước khi upload — Dify parse Excel không tốt.
+
+#### 3.2 Chunk Settings (Phân đoạn văn bản)
+
+| Setting | Giá trị khuyến nghị | Giải thích |
+|---|---|---|
+| **Chunk Mode** | **General** | Phù hợp tài liệu kỹ thuật. `Parent-child` tốt hơn cho FAQ/đoạn ngắn. ⚠️ *Không đổi được sau khi tạo.* |
+| **Delimiter** | `\n\n` (mặc định) | Tách theo đoạn văn. Có thể dùng `\n` nếu muốn tách mịn hơn. |
+| **Max Chunk Length** | **800 – 1000** | Đủ dài để giữ nguyên ngữ cảnh bảng + đoạn kỹ thuật. |
+| **Chunk Overlap** | **150 – 200** | Giữ liên tục ngữ nghĩa giữa các chunk liền kề. |
+
+#### 3.3 Index Method (Phương pháp lập chỉ mục)
+
+| Option | Chọn |
+|---|---|
+| **High Quality** ✅ | BẮT BUỘC — dùng Embedding Model để vector hóa, lưu vào Qdrant. Hỗ trợ Hybrid Search + Rerank. |
+| Economical | ❌ Không dùng — chỉ keyword search, chất lượng kém. |
+
+#### 3.4 Embedding Model
+
+| Setting | Giá trị |
+|---|---|
+| **Model** | `text-embedding-3-large` (OpenAI) |
+| **Provider** | OpenAI provider đã thêm ở Bước 2 (hoặc qua OpenRouter) |
+
+> Nếu đổi model sau này → Dify tự re-embed toàn bộ tài liệu (chạy background, mất thời gian).
+
+#### 3.5 Retrieval Settings (Cấu hình truy xuất)
+
+| Setting | Giá trị khuyến nghị | Giải thích |
+|---|---|---|
+| **Retrieval Mode** | **Hybrid Search** ✅ | Kết hợp Vector Search (ngữ nghĩa) + Full-Text Search (keyword). Chính xác nhất cho tài liệu kỹ thuật. |
+| **Rerank Model** | **Enable** — `rerank-multilingual-v3.0` (Cohere) | Sắp xếp lại kết quả theo độ liên quan. Xem mục *Reranking* bên dưới để setup. |
+| **Top K** | **5 – 8** | Số chunk trả về cho LLM. Tăng nếu câu trả lời thiếu context. |
+| **Score Threshold** | **0.3 – 0.5** | Loại bỏ chunk dưới ngưỡng điểm. Tăng nếu câu trả lời chứa noise. |
+
+4. Nhấn **Save & Process** → Dify bắt đầu chunk + embed. Theo dõi tiến trình trên giao diện.
 
 ### Bước 4: Upload tài liệu
 ```
