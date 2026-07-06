@@ -29,8 +29,11 @@ chmod +x scripts/ubuntu/*.sh
 cp scripts/ubuntu/stack.v3.3.json scripts/ubuntu/stack.example.json
 
 # ===== BƯỚC 4: Cài đặt (tự động 4 bước) =====
+# ⚠️ Nếu đã cài lần trước (có runtime/ubuntu-stack/stack.local.json cũ),
+#    thêm --overwrite-config để ghi đè config cũ (có thể còn ragflow/elasticsearch):
+#    ./scripts/ubuntu/manage.sh install --overwrite-config
 ./scripts/ubuntu/manage.sh install
-#   → bootstrap.sh: clone Dify source, tạo thư mục
+#   → bootstrap.sh: clone Dify source, tạo thư mục, copy stack.example.json → stack.local.json
 #   → install-middleware.sh: cài Postgres, Redis, download Qdrant, build Plugin Daemon
 #   → setup-databases.sh: tạo DB dify, dify_plugin
 #   → configure-dify-env.sh: tạo .env cho Dify API, Web, Frontend, Plugin Daemon

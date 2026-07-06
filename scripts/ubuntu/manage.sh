@@ -37,11 +37,16 @@ mark_step() {
 }
 
 cmd_install() {
+    local OVERWRITE_FLAG=""
+    if [[ "$1" == "--overwrite-config" ]]; then
+        OVERWRITE_FLAG="--overwrite-config"
+    fi
+    
     echo "=== Starting Installation Pipeline ==="
     
-    if ! check_step "bootstrap"; then
-        echo "--> Running bootstrap..."
-        "$SCRIPT_DIR/bootstrap.sh"
+    if ! check_step "bootstrap" || [ -n "$OVERWRITE_FLAG" ]; then
+        echo "--> Running bootstrap... $OVERWRITE_FLAG"
+        "$SCRIPT_DIR/bootstrap.sh" $OVERWRITE_FLAG
         mark_step "bootstrap"
     else
         echo "--> Skipping bootstrap (Already done)"
@@ -183,7 +188,7 @@ cmd_restart() {
 
 case "$1" in
     install)
-        cmd_install
+        cmd_install "$2"
         ;;
     start)
         "$SCRIPT_DIR/start-stack.sh"
