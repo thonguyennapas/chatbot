@@ -27,6 +27,13 @@ git clone <repo-url> ~/chatbot && cd ~/chatbot
 chmod +x scripts/ubuntu/*.sh
 cp scripts/ubuntu/stack.v3.3.json scripts/ubuntu/stack.example.json
 ./scripts/ubuntu/manage.sh install
+
+# Build Dify Web (Admin UI)
+cd ~/chatbot/runtime/dify/web && corepack enable && corepack pnpm install && corepack pnpm build && cd ~/chatbot
+
+# Build Chatbot Frontend
+cd ~/chatbot/frontend && npm install && npm run build && cd ~/chatbot
+
 ./scripts/ubuntu/manage.sh start
 ```
 

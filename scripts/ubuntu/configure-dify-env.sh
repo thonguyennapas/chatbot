@@ -53,7 +53,13 @@ if [ ! -f "$FRONTEND_ENV" ] && [ -f "$FRONTEND_EXAMPLE" ]; then
 
     # Configure Dify connection (without this, frontend runs in mock mode)
     sed -i "s|^DIFY_BASE_URL=.*|DIFY_BASE_URL=http://127.0.0.1:5001|" "$FRONTEND_ENV"
-    sed -i "s|^DIFY_USE_MOCK=.*|DIFY_USE_MOCK=false|" "$FRONTEND_ENV"
+
+    # DIFY_USE_MOCK is not in .env.local.example, so append it
+    if ! grep -q "^DIFY_USE_MOCK=" "$FRONTEND_ENV"; then
+        echo "DIFY_USE_MOCK=false" >> "$FRONTEND_ENV"
+    else
+        sed -i "s|^DIFY_USE_MOCK=.*|DIFY_USE_MOCK=false|" "$FRONTEND_ENV"
+    fi
     echo "  NOTE: Set DIFY_API_KEY in frontend/.env.local after creating a Dify App."
     echo "  Get the key from: Dify → App → API Access → API Key"
 fi

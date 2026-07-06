@@ -6,8 +6,8 @@ source "$SCRIPT_DIR/stack-common.sh"
 
 echo "Verifying local network wiring..."
 
-PORTS=(6379 5433 6333 5001 5002 3001)
-NAMES=("Redis" "PostgreSQL" "Qdrant" "Dify API" "Dify Plugin Daemon" "Dify Web")
+PORTS=(6379 5433 6333 5001 5002 3001 3000)
+NAMES=("Redis" "PostgreSQL" "Qdrant" "Dify API" "Dify Plugin Daemon" "Dify Web" "Chatbot Frontend")
 
 for i in "${!PORTS[@]}"; do
     PORT="${PORTS[$i]}"

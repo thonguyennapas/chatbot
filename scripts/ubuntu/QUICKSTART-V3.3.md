@@ -35,16 +35,22 @@ cp scripts/ubuntu/stack.v3.3.json scripts/ubuntu/stack.example.json
 #   → setup-databases.sh: tạo DB dify, dify_plugin
 #   → configure-dify-env.sh: tạo .env cho Dify API, Web, Frontend, Plugin Daemon
 
-# ===== BƯỚC 5: Build frontend =====
+# ===== BƯỚC 5: Build Dify Web (Admin UI) =====
+cd ~/chatbot/runtime/dify/web
+corepack enable && corepack pnpm install
+corepack pnpm build
+cd ~/chatbot
+
+# ===== BƯỚC 6: Build Chatbot Frontend =====
 cd ~/chatbot/frontend
 npm install
 npm run build
 cd ~/chatbot
 
-# ===== BƯỚC 6: Khởi động =====
+# ===== BƯỚC 7: Khởi động =====
 ./scripts/ubuntu/manage.sh start
 
-# ===== BƯỚC 7: Kiểm tra =====
+# ===== BƯỚC 8: Kiểm tra =====
 ./scripts/ubuntu/manage.sh status
 # Cần 7 services RUNNING:
 #   ✅ redis (6379)
@@ -96,26 +102,34 @@ Dify Admin → Settings → Model Provider:
 
 ### Bước 4: Upload tài liệu
 ```
-1. Upload file PDF/DOCX gốc vào KB (Dify auto-parse text + bảng)
+1. Copy tất cả file PDF/DOCX vào thư mục input/:
+   cp ~/tai_lieu/*.pdf ~/chatbot/input/
 
-2. Pre-processing ảnh/diagram (chạy trên server hoặc local):
+2. Pre-processing ảnh/diagram (1 lệnh cho TẤT CẢ files):
 
-   # Cài Python deps
+   # Cài Python deps (chỉ lần đầu)
    pip3 install -r scripts/requirements.txt
 
-   # Chạy pipeline
+   # Scan trước để xem thống kê + ước tính chi phí
    python3 scripts/preprocess_multimodal.py \
-     --input "tai_lieu.pdf" \
-     --doc-name "Huong_dan_API_v2.1" \
+     --input-dir "./input" \
+     --api-key "dummy" \
+     --scan-only
+
+   # Chạy pipeline (model rẻ cho diagram, pro cho bảng)
+   python3 scripts/preprocess_multimodal.py \
+     --input-dir "./input" \
      --output-dir "./output" \
      --public-dir "./frontend/public" \
-     --api-key "sk-or-..."
+     --api-key "sk-or-..." \
+     --vision-model "google/gemini-2.5-flash" \
+     --table-model "google/gemini-2.5-pro"
 
-   # Kết quả:
-   #   output/huong_dan_api_v2.1_images.md → Upload vào Dify KB
-   #   frontend/public/docs/images/huong_dan_api_v2.1/ → Ảnh serve trên web
+   # Kết quả (mỗi file 1 cặp output):
+   #   output/<tên_file>_images.md → Upload vào Dify KB
+   #   frontend/public/docs/images/<tên_file>/ → Ảnh serve trên web
 
-3. Upload file .md (output) vào CÙNG Knowledge Base
+3. Trên Dify: upload file PDF gốc + file .md (output) vào CÙNG Knowledge Base
 ```
 
 ### Bước 5: Tạo Chatflow & Link Knowledge Base

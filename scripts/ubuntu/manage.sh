@@ -77,8 +77,8 @@ cmd_install() {
 
 cmd_nuke_ports() {
     echo "Aggressively terminating processes on project ports..."
-    # Ports: redis, pg, qdrant, dify-api, dify-plugin, dify-web, mysql, es, minio, rag-api, rag-web
-    PORTS=(6379 5433 6333 5001 5002 3001 3307 1200 9000 9380 8080)
+    # Ports: redis, pg, qdrant, dify-api, dify-plugin, dify-web, chatbot-frontend
+    PORTS=(6379 5433 6333 5001 5002 3001 3000)
     
     for PORT in "${PORTS[@]}"; do
         if ss -tuln | grep -q ":$PORT "; then

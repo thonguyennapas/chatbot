@@ -38,58 +38,6 @@ else
     echo "Postgres data directory already initialized or initdb not found."
 fi
 
-# MySQL data init
-MYSQL_DATA="$RUNTIME_ROOT/data/mysql"
-if command -v mysqld >/dev/null 2>&1 && [ ! -d "$MYSQL_DATA" ]; then
-    echo "Initializing MySQL data directory at $MYSQL_DATA"
-    
-    # 1. Temporarily disable AppArmor for mysqld so it can create the directory
-    if command -v apparmor_parser >/dev/null 2>&1; then
-        echo "Temporarily disabling AppArmor for mysqld..."
-        mkdir -p /etc/apparmor.d/disable
-        ln -sf /etc/apparmor.d/usr.sbin.mysqld /etc/apparmor.d/disable/
-        apparmor_parser -R /etc/apparmor.d/usr.sbin.mysqld || true
-    fi
-
-    # 2. Run initialization (mysqld MUST create the directory itself, so we ensure it doesn't exist)
-    rm -rf "$MYSQL_DATA"
-    mysqld --initialize-insecure --user=root --datadir="$MYSQL_DATA"
-    chown -R mysql:mysql "$MYSQL_DATA"
-
-    # 3. Re-enable AppArmor and add an alias so it works during runtime
-    if command -v apparmor_parser >/dev/null 2>&1; then
-        echo "Re-enabling AppArmor with alias..."
-        rm -f /etc/apparmor.d/disable/usr.sbin.mysqld
-        if ! grep -q "$MYSQL_DATA" /etc/apparmor.d/tunables/alias; then
-            echo "alias /var/lib/mysql/ -> $MYSQL_DATA/," >> /etc/apparmor.d/tunables/alias
-        fi
-        systemctl restart apparmor || true
-    fi
-else
-    echo \"MySQL data directory already initialized or mysqld not found.\"
-fi
-
-# Create RAGFlow database in MySQL if not yet created
-RAGFLOW_DB_MARKER="$RUNTIME_ROOT/.ragflow_db_created"
-if command -v mysqld >/dev/null 2>&1 && [ -d "$MYSQL_DATA" ] && [ ! -f "$RAGFLOW_DB_MARKER" ]; then
-    echo "Creating RAGFlow database (rag_flow) in MySQL..."
-    
-    # Start MySQL temporarily
-    mysqld --datadir="$MYSQL_DATA" --port=3307 --user=mysql --socket=/tmp/ragflow_setup.sock &
-    MYSQL_TMP_PID=$!
-    sleep 5
-    
-    # Create database
-    mysql --socket=/tmp/ragflow_setup.sock -u root -e "CREATE DATABASE IF NOT EXISTS rag_flow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || \
-    mysql -h 127.0.0.1 -P 3307 -u root -e "CREATE DATABASE IF NOT EXISTS rag_flow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
-    
-    # Stop MySQL
-    kill "$MYSQL_TMP_PID" 2>/dev/null || true
-    wait "$MYSQL_TMP_PID" 2>/dev/null || true
-    rm -f /tmp/ragflow_setup.sock
-    
-    touch "$RAGFLOW_DB_MARKER"
-    echo "  RAGFlow database created."
-fi
+# Note: MySQL/RAGFlow removed in v3.3 (Full Dify architecture — Postgres only)
 
 echo "Database setup complete."

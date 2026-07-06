@@ -15,8 +15,8 @@ echo "Installing middleware. This requires sudo privileges for apt-get..."
 # Update apt
 sudo apt-get update
 
-# Install Postgres, Redis, MySQL Server
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql redis-server mysql-server
+# Install Postgres, Redis (v3.3: no MySQL needed)
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql redis-server
 
 # Qdrant
 QDRANT_DIR="$BIN_DIR/qdrant"
@@ -24,23 +24,6 @@ if [ ! -f "$QDRANT_DIR/qdrant" ]; then
     echo "Downloading Qdrant..."
     mkdir -p "$QDRANT_DIR"
     wget -qO- https://github.com/qdrant/qdrant/releases/download/v1.12.5/qdrant-x86_64-unknown-linux-gnu.tar.gz | tar xz -C "$QDRANT_DIR"
-fi
-
-# MinIO
-MINIO_DIR="$BIN_DIR/minio"
-if [ ! -f "$MINIO_DIR/minio" ]; then
-    echo "Downloading MinIO..."
-    mkdir -p "$MINIO_DIR"
-    wget -qO "$MINIO_DIR/minio" https://dl.min.io/server/minio/release/linux-amd64/minio
-    chmod +x "$MINIO_DIR/minio"
-fi
-
-# Elasticsearch
-ES_DIR="$BIN_DIR/elasticsearch"
-if [ ! -d "$ES_DIR" ]; then
-    echo "Downloading Elasticsearch 8.11.3..."
-    wget -qO- https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.11.3-linux-x86_64.tar.gz | tar xz -C "$BIN_DIR"
-    mv "$BIN_DIR/elasticsearch-8.11.3" "$ES_DIR"
 fi
 
 # Plugin Daemon (must be built from source — the GitHub release binary is the CLI, not the server)
