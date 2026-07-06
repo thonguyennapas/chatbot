@@ -76,14 +76,14 @@ Mở trình duyệt → `http://<SERVER_IP>:3001/install`
 ```
 Dify Admin → Settings → Model Provider:
 
-1. Thêm OpenRouter (hoặc OpenAI/DeepSeek):
-   - API Base: https://openrouter.ai/api/v1
-   - API Key: sk-or-...
-   - Dùng cho: LLM (Claude 4.6 Sonnet, Haiku)
+1. Thêm Google Gemini:
+   - Provider: Google
+   - API Key: AIza...
+   - Dùng cho: LLM (gemini-2.5-flash, gemini-2.5-pro)
 
-2. Thêm Embedding Model:
-   - OpenAI provider → text-embedding-3-large
-   - Hoặc qua OpenRouter
+2. Embedding Model:
+   - Dùng Google: text-embedding-004
+   - Hoặc OpenAI: text-embedding-3-large
 
 3. Thêm Reranking Model (xem mục bên dưới)
 ```
@@ -218,7 +218,7 @@ Kéo thả file PDF/DOCX/TXT/CSV/Markdown vào.
    [Start]
      │
      ▼
-   [Question Classifier] ← Claude 4.6 Sonnet (Phân loại câu hỏi)
+   [Question Classifier] ← Gemini 2.5 Flash (Phân loại câu hỏi)
      │
      ├── Class 1: "Câu hỏi về 3DS2, tài liệu kỹ thuật"
      │     │
@@ -226,7 +226,7 @@ Kéo thả file PDF/DOCX/TXT/CSV/Markdown vào.
      │   [Knowledge Retrieval] ← Chọn Context: napas_3ds2_knowledge_base
      │     │                     (top_k=8, score_threshold=0.4)
      │     ▼
-     │   [LLM Summarizer] ← Claude 4.6 Sonnet, temp=0.2
+     │   [LLM Summarizer] ← Gemini 2.5 Flash, temp=0.2
      │     │                (Prompt: "Bạn là Trợ lý AI nội bộ của NAPAS chuyên về 3D Secure 2.0. 
      │     │                 Hãy dựa vào bối cảnh (Context) để trả lời. Trình bày bằng Markdown, 
      │     │                 sử dụng bảng biểu nếu cần thiết.")
@@ -236,7 +236,7 @@ Kéo thả file PDF/DOCX/TXT/CSV/Markdown vào.
      └── Class 2: "Chào hỏi, chitchat, ngoài phạm vi"
            │
            ▼
-         [LLM Chitchat] ← Claude Haiku (nhẹ), temp=0.7
+         [LLM Chitchat] ← Gemini 2.5 Flash (nhẹ), temp=0.7
            │
            ▼
          [Answer]
