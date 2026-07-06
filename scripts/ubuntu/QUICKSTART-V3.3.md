@@ -190,15 +190,14 @@ Kéo thả file PDF/DOCX/TXT/CSV/Markdown vào.
      --api-key "dummy" \
      --scan-only
 
-   # Chạy pipeline (model rẻ cho diagram, pro cho bảng)
+   # Chạy pipeline (dùng Google Gemini Flash — rẻ, nhanh)
    python3 scripts/preprocess_multimodal.py \
      --input-dir "./input" \
      --output-dir "./output" \
      --public-dir "./frontend/public" \
      --project "3ds2" \
-     --api-key "sk-or-..." \
-     --vision-model "google/gemini-2.5-flash" \
-     --table-model "google/gemini-2.5-pro"
+     --api-key "AIza..."  \
+     --vision-model "gemini-2.5-flash"
 
    # Kết quả:
    #   output/<tên_file>_full.md                    → Upload vào Dify KB

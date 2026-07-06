@@ -399,8 +399,8 @@ def describe_image_with_vision(
     image_path: str,
     api_key: str,
     prompt: str,
-    api_url: str = "https://openrouter.ai/api/v1/chat/completions",
-    model: str = "google/gemini-2.5-pro",
+    api_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    model: str = "gemini-2.5-flash",
 ) -> str:
     """Dùng Vision Model để sinh mô tả text cho ảnh/diagram.
 
@@ -470,8 +470,8 @@ def create_full_markdown(
     doc_name: str,
     output_path: str,
     api_key: str,
-    api_url: str = "https://openrouter.ai/api/v1/chat/completions",
-    model: str = "google/gemini-2.5-pro",
+    api_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    model: str = "gemini-2.5-flash",
     table_model: str | None = None,
     project: str = "general",
 ) -> None:
@@ -781,9 +781,9 @@ Output:
     parser.add_argument("--doc-name", "-n", default=None, help="Document name (auto-generated from filename if omitted)")
     parser.add_argument("--output-dir", "-o", default="./output", help="Output directory for .md files")
     parser.add_argument("--public-dir", "-p", default="./frontend/public", help="Next.js public directory")
-    parser.add_argument("--api-key", "-k", required=True, help="OpenRouter API key")
-    parser.add_argument("--api-url", default="https://openrouter.ai/api/v1/chat/completions", help="Vision API endpoint")
-    parser.add_argument("--vision-model", default="google/gemini-2.5-pro", help="Vision model for diagrams + embedded images")
+    parser.add_argument("--api-key", "-k", required=True, help="Google Gemini API key (AIza...)")
+    parser.add_argument("--api-url", default="https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", help="Vision API endpoint (default: Google Gemini)")
+    parser.add_argument("--vision-model", default="gemini-2.5-flash", help="Vision model for diagrams + embedded images")
     parser.add_argument("--table-model", default=None, help="Vision model for tables (default: uses --vision-model)")
     parser.add_argument("--skip-vision", action="store_true", help="Skip Vision API (extract images only, no description)")
     parser.add_argument("--scan-only", action="store_true", help="Classify + stats only, no screenshots/Vision")
