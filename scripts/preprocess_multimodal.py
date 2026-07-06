@@ -267,20 +267,22 @@ def extract_images_from_pdf(
     output_dir: str,
     enable_filter: bool = True,
     scan_only: bool = False,
-) -> tuple[list[dict[str, Any]], dict[str, int]]:
-    """Extract tất cả ảnh từ PDF, lưu ra folder.
+) -> tuple[list[dict[str, Any]], dict[str, int], list[dict[str, Any]]]:
+    """Extract tất cả ảnh + text từ PDF, lưu ra folder.
 
     Bao gồm:
     - Smart page classification (table/diagram/boilerplate/text_only)
     - Fallback screenshot cho trang vector
     - Boilerplate filtering
+    - Text extraction cho text_only pages
 
     Returns:
-        Tuple of (images list, classification stats dict)
+        Tuple of (images list, classification stats dict, text_pages list)
     """
     os.makedirs(output_dir, exist_ok=True)
     doc = fitz.open(pdf_path)
     images: list[dict[str, Any]] = []
+    text_pages: list[dict[str, Any]] = []
     stats: dict[str, int] = {"table": 0, "diagram": 0, "boilerplate": 0, "text_only": 0, "embedded": 0}
 
     print(f"📄 Đang xử lý {pdf_path} ({len(doc)} trang)...")
@@ -337,8 +339,16 @@ def extract_images_from_pdf(
                 # --no-filter: treat as diagram
                 page_class = "diagram"
 
-        # Skip text_only pages (no vector content to screenshot)
+        # Text-only pages: extract text directly (no screenshot needed)
         if page_class == "text_only":
+            if not scan_only:
+                raw_text = page.get_text().strip()
+                clean_text = _strip_boilerplate_text(raw_text)
+                if clean_text:
+                    text_pages.append({
+                        "page": page_num + 1,
+                        "text": raw_text,
+                    })
             continue
 
         # Screenshot for table/diagram pages
@@ -369,9 +379,9 @@ def extract_images_from_pdf(
     doc.close()
 
     if not scan_only:
-        print(f"\n📊 Tổng cộng: {len(images)} ảnh extracted\n")
+        print(f"\n📊 Tổng cộng: {len(images)} ảnh + {len(text_pages)} trang text extracted\n")
 
-    return images, stats
+    return images, stats, text_pages
 
 
 def _image_is_significant(doc: fitz.Document, img_ref: tuple) -> bool:
@@ -454,8 +464,9 @@ def describe_image_with_vision(
 
 # ─── Step 3: Create markdown with image URLs ────────────────────────────────
 
-def create_image_descriptions_md(
+def create_full_markdown(
     images: list[dict[str, Any]],
+    text_pages: list[dict[str, Any]],
     doc_name: str,
     output_path: str,
     api_key: str,
@@ -463,49 +474,71 @@ def create_image_descriptions_md(
     model: str = "google/gemini-2.5-pro",
     table_model: str | None = None,
 ) -> None:
-    """Tạo file .md chứa mô tả + LINK ẢNH GỐC cho 1 tài liệu.
+    """Tạo file .md ĐẦY ĐỦ NỘI DUNG tài liệu: text + ảnh + bảng + diagram.
 
-    Mỗi entry chứa:
-    - ![alt](url) → frontend render ảnh inline trong chat
-    - Mô tả text chi tiết → cho Hybrid Search + LLM context
-    - Prompt chuyên biệt theo loại trang (table vs diagram)
+    Merge tất cả content theo thứ tự trang:
+    - Text-only pages: plain text từ PyMuPDF
+    - Table/diagram pages: screenshot + Vision AI mô tả
+    - Embedded images: ảnh gốc + Vision AI mô tả
+
+    Output: 1 file .md duy nhất → upload thẳng vào Dify KB (không cần PDF gốc).
     """
     effective_table_model = table_model or model
     doc_slug = doc_name.replace(" ", "_").lower()
-    output: list[str] = [f"# Mô Tả Ảnh và Diagram — {doc_name}\n"]
+
+    # Build lookup: page_num → text content
+    text_by_page: dict[int, str] = {tp["page"]: tp["text"] for tp in text_pages}
+    # Build lookup: page_num → list of images on that page
+    images_by_page: dict[int, list[dict[str, Any]]] = {}
+    for img in images:
+        images_by_page.setdefault(img["page"], []).append(img)
+
+    # Collect all page numbers that have content
+    all_pages = sorted(set(text_by_page.keys()) | set(images_by_page.keys()))
+
+    output: list[str] = [f"# {doc_name}\n"]
     output.append(f"**Tài liệu nguồn:** {doc_name}\n")
 
-    for i, img in enumerate(images, 1):
-        page_class = img.get("page_class", "embedded")
-        icon = {"table": "📋", "diagram": "📐", "embedded": "🖼️"}.get(page_class, "📄")
-        use_model = effective_table_model if page_class == "table" else model
+    vision_call_idx = 0
+    total_vision_calls = len(images)
 
-        print(f"  🔍 [{i}/{len(images)}] {icon} {page_class}: {Path(img['file']).name} (model: {use_model.split('/')[-1]})...")
+    for page_num in all_pages:
+        # Text content for this page
+        if page_num in text_by_page:
+            text = text_by_page[page_num]
+            output.append(f"<!-- Trang {page_num} -->")
+            output.append(text)
+            output.append("")
 
-        context = f"Tài liệu: {doc_name}, Trang {img['page']}"
-        prompt = _get_prompt_for_type(page_class, context)
+        # Image/table/diagram content for this page
+        if page_num in images_by_page:
+            for img in images_by_page[page_num]:
+                vision_call_idx += 1
+                page_class = img.get("page_class", "embedded")
+                icon = {"table": "📋", "diagram": "📐", "embedded": "🖼️"}.get(page_class, "📄")
+                use_model = effective_table_model if page_class == "table" else model
 
-        description = describe_image_with_vision(
-            img["file"],
-            api_key=api_key,
-            prompt=prompt,
-            api_url=api_url,
-            model=use_model,
-        )
+                print(f"  🔍 [{vision_call_idx}/{total_vision_calls}] {icon} {page_class}: {Path(img['file']).name} (model: {use_model.split('/')[-1]})...")
 
-        img_filename = Path(img["file"]).name
-        img_url = f"{IMAGE_BASE_URL}/{doc_slug}/{img_filename}"
+                context = f"Tài liệu: {doc_name}, Trang {img['page']}"
+                prompt = _get_prompt_for_type(page_class, context)
 
-        # Section heading includes classification
-        class_label = {"table": "Bảng", "diagram": "Sơ đồ", "embedded": "Hình ảnh"}.get(page_class, "Hình ảnh")
-        output.append(f"## [{doc_name}] {class_label} trang {img['page']}, ảnh {img['index']}")
-        output.append(f"**Nguồn:** {doc_name}, Trang {img['page']}  ")
-        output.append(f"**Phân loại:** {page_class}")
-        output.append("")
-        output.append(f"![{doc_name} - Trang {img['page']}]({img_url})")
-        output.append("")
-        output.append(f"**Mô tả chi tiết:**\n{description}\n")
-        output.append("---\n")
+                description = describe_image_with_vision(
+                    img["file"],
+                    api_key=api_key,
+                    prompt=prompt,
+                    api_url=api_url,
+                    model=use_model,
+                )
+
+                img_filename = Path(img["file"]).name
+                img_url = f"{IMAGE_BASE_URL}/{doc_slug}/{img_filename}"
+
+                class_label = {"table": "Bảng", "diagram": "Sơ đồ", "embedded": "Hình ảnh"}.get(page_class, "Hình ảnh")
+                output.append(f"### {class_label} — Trang {img['page']}")
+                output.append(f"![{doc_name} - Trang {img['page']}]({img_url})")
+                output.append("")
+                output.append(f"{description}\n")
 
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
@@ -594,9 +627,9 @@ def process_single_file(
     print(f"   Filter: {'OFF (--no-filter)' if no_filter else 'ON'}")
     print("=" * 60)
 
-    # Step 1: Extract images + classify pages
-    print("\nStep 1: Extracting images + classifying pages...")
-    images, stats = extract_images_from_pdf(
+    # Step 1: Extract images + text + classify pages
+    print("\nStep 1: Extracting images + text + classifying pages...")
+    images, stats, text_pages = extract_images_from_pdf(
         input_path,
         file_temp_dir,
         enable_filter=not no_filter,
@@ -610,40 +643,47 @@ def process_single_file(
     if scan_only:
         return stats
 
-    if not images:
-        print("No images found in document.")
-        print("   -> Just upload the original file to Dify KB.")
+    if not images and not text_pages:
+        print("No content found in document.")
         return stats
 
     # Step 2: Copy images to public
-    print("\nStep 2: Copying images to public folder...")
-    copy_images_to_public(images, doc_name, public_dir)
+    if images:
+        print("\nStep 2: Copying images to public folder...")
+        copy_images_to_public(images, doc_name, public_dir)
+    else:
+        print("\nStep 2: No images to copy (text-only document).")
 
-    # Step 3: Vision describe + create markdown
-    md_output = os.path.join(output_dir, f"{doc_slug}_images.md")
+    # Step 3: Create full markdown (text + vision descriptions)
+    md_output = os.path.join(output_dir, f"{doc_slug}_full.md")
 
     if skip_vision:
-        print("Step 3: Skipping Vision API (--skip-vision)")
-        output = [f"# Images from {doc_name}\n"]
+        print("Step 3: Skipping Vision API (--skip-vision) — text-only output")
+        output = [f"# {doc_name}\n"]
+        # Write text pages
+        for tp in text_pages:
+            output.append(f"<!-- Trang {tp['page']} -->")
+            output.append(tp["text"])
+            output.append("")
+        # Write image placeholders
         for img in images:
             page_class = img.get("page_class", "embedded")
-            class_label = {"table": "Table", "diagram": "Diagram", "embedded": "Image"}.get(page_class, "Image")
+            class_label = {"table": "Bảng", "diagram": "Sơ đồ", "embedded": "Hình ảnh"}.get(page_class, "Hình ảnh")
             img_filename = Path(img["file"]).name
             img_url = f"{IMAGE_BASE_URL}/{doc_slug}/{img_filename}"
-            output.append(f"## {class_label} - Page {img['page']}, img {img['index']}")
-            output.append(f"**Classification:** {page_class}")
-            output.append(f"![{doc_name} - Page {img['page']}]({img_url})")
-            output.append(f"**Source:** {doc_name}, Page {img['page']}")
-            output.append("[No description - rerun without --skip-vision]\n---\n")
+            output.append(f"### {class_label} — Trang {img['page']}")
+            output.append(f"![{doc_name} - Trang {img['page']}]({img_url})")
+            output.append("[Chưa có mô tả — chạy lại không có --skip-vision]\n")
 
         os.makedirs(output_dir, exist_ok=True)
         with open(md_output, "w", encoding="utf-8") as f:
             f.write("\n".join(output))
         print(f"  Saved placeholder: {md_output}")
     else:
-        print("\nStep 3: Vision Model describing images (smart prompts)...")
-        create_image_descriptions_md(
+        print(f"\nStep 3: Creating full markdown ({len(text_pages)} text pages + {len(images)} vision calls)...")
+        create_full_markdown(
             images,
+            text_pages=text_pages,
             doc_name=doc_name,
             output_path=md_output,
             api_key=api_key,
@@ -655,13 +695,14 @@ def process_single_file(
     # Summary
     print("\n" + "=" * 60)
     print("DONE!")
-    print(f"   Markdown: {md_output}")
-    print(f"   Images:   {public_dir}/docs/images/{doc_slug}/")
+    print(f"   Full Markdown: {md_output}")
+    if images:
+        print(f"   Images:        {public_dir}/docs/images/{doc_slug}/")
     print()
     print("Next steps:")
-    print(f"   1. Upload original ({input_path}) to Dify Knowledge Base")
-    print(f"   2. Upload {md_output} to the SAME Knowledge Base")
-    print(f"   3. Test retrieval in Dify")
+    print(f"   1. Upload {md_output} vào Dify Knowledge Base")
+    print(f"   2. KHÔNG cần upload PDF gốc (đã bao gồm text + ảnh)")
+    print(f"   3. Test retrieval trong Dify")
     print("=" * 60)
 
     return stats

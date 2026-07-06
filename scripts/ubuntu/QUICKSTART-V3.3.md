@@ -173,12 +173,12 @@ Kéo thả file PDF/DOCX/TXT/CSV/Markdown vào.
 
 4. Nhấn **Save & Process** → Dify bắt đầu chunk + embed. Theo dõi tiến trình trên giao diện.
 
-### Bước 4: Upload tài liệu
+### Bước 4: Pre-process + Upload tài liệu
 ```
 1. Copy tất cả file PDF/DOCX vào thư mục input/:
    cp ~/tai_lieu/*.pdf ~/chatbot/input/
 
-2. Pre-processing ảnh/diagram (1 lệnh cho TẤT CẢ files):
+2. Pre-processing (extract text + bảng + diagram → 1 file .md):
 
    # Cài Python deps (chỉ lần đầu)
    pip3 install -r scripts/requirements.txt
@@ -198,11 +198,12 @@ Kéo thả file PDF/DOCX/TXT/CSV/Markdown vào.
      --vision-model "google/gemini-2.5-flash" \
      --table-model "google/gemini-2.5-pro"
 
-   # Kết quả (mỗi file 1 cặp output):
-   #   output/<tên_file>_images.md → Upload vào Dify KB
+   # Kết quả (mỗi file 1 output):
+   #   output/<tên_file>_full.md              → Upload vào Dify KB
    #   frontend/public/docs/images/<tên_file>/ → Ảnh serve trên web
 
-3. Trên Dify: upload file PDF gốc + file .md (output) vào CÙNG Knowledge Base
+3. Trên Dify: upload CHỈ file .md (output) vào Knowledge Base
+   → KHÔNG cần upload PDF gốc (file .md đã chứa đầy đủ text + mô tả bảng/diagram)
 ```
 
 ### Bước 5: Tạo Chatflow & Link Knowledge Base
