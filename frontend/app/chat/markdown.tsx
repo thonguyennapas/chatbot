@@ -1,7 +1,10 @@
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import dynamic from 'next/dynamic'
 import { IconCopy, IconCheck } from './icons'
+
+const Mermaid = dynamic(() => import('./Mermaid'), { ssr: false })
 
 export function renderMarkdown(content: string) {
   if (!content) return null
@@ -24,6 +27,10 @@ export function renderMarkdown(content: string) {
 
           const lang = match[1]
           const codeStr = String(children).replace(/\n$/, '')
+
+          if (lang === 'mermaid') {
+            return <Mermaid chart={codeStr} />
+          }
 
           return (
             <div className="group relative my-4 overflow-hidden rounded-lg border" style={{ borderColor: 'var(--border-color)' }}>
