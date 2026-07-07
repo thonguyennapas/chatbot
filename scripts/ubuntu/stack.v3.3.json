@@ -58,10 +58,10 @@
     {
       "name": "dify-api",
       "enabled": true,
-      "description": "Dify Flask API — Chatflow brain + Knowledge Base.",
+      "description": "Dify API via gunicorn + GeventWebSocketWorker — Chatflow brain + Knowledge Base.",
       "workingDirectory": "runtime/dify/api",
       "command": "bash",
-      "arguments": ["-c", "uv run flask db upgrade && uv run flask run --host 127.0.0.1 --port 5001 --debug"],
+      "arguments": ["-c", "uv run flask db upgrade && exec uv run gunicorn --bind 127.0.0.1:5001 --workers 1 --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker --worker-connections 10 --timeout 200 app:socketio_app"],
       "port": 5001,
       "startupTimeoutSeconds": 90
     },
@@ -71,7 +71,7 @@
       "description": "Dify Celery Worker — background tasks: document indexing, embedding, mail.",
       "workingDirectory": "runtime/dify/api",
       "command": "bash",
-      "arguments": ["-c", "uv run celery -A app.celery worker -P gevent -c 1 --loglevel INFO -Q dataset,generation,mail,ops_trace,app_deletion"],
+      "arguments": ["-c", "uv run celery -A app.celery worker -P gevent -c 1 --loglevel INFO -Q dataset,dataset_summary,priority_dataset,priority_pipeline,pipeline,generation,mail,ops_trace,app_deletion,plugin,workflow_storage,conversation,workflow,workflow_based_app_execution"],
       "port": 0,
       "startupTimeoutSeconds": 30
     },

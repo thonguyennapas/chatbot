@@ -552,6 +552,28 @@ def create_full_markdown(
     print(f"  ✅ Saved: {output_path}")
 
 
+def generate_kb_markdown(full_md_path: str, kb_md_path: str) -> None:
+    """Generate a Dify KB-ready version of the full markdown.
+
+    Converts image embeds ![alt](path) → regular links [📎 alt](path).
+    Dify only tries to download image embeds (![...]), not regular links ([...]).
+    This preserves the image path so the LLM can reference it in responses,
+    while preventing indexing failures from relative URL downloads.
+    """
+    with open(full_md_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Convert ![alt text](image_path) → [📎 alt text](image_path)
+    kb_content = re.sub(r'!\[([^\]]*)\]\(([^)]*)\)', r'[📎 \1](\2)', content)
+
+    with open(kb_md_path, "w", encoding="utf-8") as f:
+        f.write(kb_content)
+
+    # Count how many images were converted
+    original_count = len(re.findall(r'!\[', content))
+    print(f"  ✅ KB version: {kb_md_path} ({original_count} image embeds → links)")
+
+
 # ─── Step 4: Copy images to Next.js public folder ───────────────────────────
 
 def copy_images_to_public(
@@ -701,16 +723,23 @@ def process_single_file(
             table_model=table_model,
         )
 
+    # Step 4: Generate KB-ready markdown (strip image references)
+    kb_output = os.path.join(output_dir, f"{doc_slug}_kb.md")
+    print(f"\nStep 4: Generating KB-ready markdown (no image refs)...")
+    generate_kb_markdown(md_output, kb_output)
+
     # Summary
     print("\n" + "=" * 60)
     print("DONE!")
-    print(f"   Full Markdown: {md_output}")
+    print(f"   Full Markdown:  {md_output}  (frontend display)")
+    print(f"   KB Markdown:    {kb_output}  (upload to Dify KB)")
     if images:
         print(f"   Images:        {public_dir}/docs/{project}/{doc_slug}/")
     print()
     print("Next steps:")
-    print(f"   1. Upload {md_output} vào Dify Knowledge Base")
-    print(f"   2. KHÔNG cần upload PDF gốc (đã bao gồm text + ảnh)")
+    print(f"   1. Upload {kb_output} vào Dify Knowledge Base")
+    print(f"      (KHÔNG dùng _full.md — chứa image links gây lỗi indexing)")
+    print(f"   2. KHÔNG cần upload PDF gốc (đã bao gồm text + mô tả ảnh)")
     print(f"   3. Test retrieval trong Dify")
     print("=" * 60)
 
@@ -771,8 +800,9 @@ Examples:
     --api-key "sk-or-..."
 
 Output:
-  ./output/<doc_name>_full.md                    -> Upload to Dify KB
-  ./frontend/public/docs/<project>/<doc_name>/   -> Images served on web
+   ./output/<doc_name>_full.md                    -> Full markdown (frontend display)
+   ./output/<doc_name>_kb.md                      -> KB-ready (upload to Dify KB)
+   ./frontend/public/docs/<project>/<doc_name>/   -> Images served on web
         """,
     )
 

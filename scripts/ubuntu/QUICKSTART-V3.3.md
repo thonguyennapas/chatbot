@@ -59,7 +59,7 @@ cd ~/chatbot
 #   ✅ redis (6379)
 #   ✅ postgres (5433)
 #   ✅ qdrant (6333)
-#   ✅ dify-api (5001)
+#   ✅ dify-api (5001) — gunicorn + GeventWebSocketWorker
 #   ✅ dify-worker (no port — background task processor)
 #   ✅ dify-plugin-daemon (5002)
 #   ✅ dify-web (3001)
@@ -199,14 +199,17 @@ Kéo thả file PDF/DOCX/TXT/CSV/Markdown vào.
      --api-key "AIza..."  \
      --vision-model "gemini-2.5-flash"
 
-   # Kết quả:
-   #   output/<tên_file>_full.md                    → Upload vào Dify KB
-   #   frontend/public/docs/3ds2/<tên_file>/        → Ảnh serve trên web
+   # Kết quả (2 file .md):
+   #   output/<tên_file>_full.md   → Frontend display (có image links)
+   #   output/<tên_file>_kb.md     → Upload vào Dify KB (đã strip images)
+   #   frontend/public/docs/3ds2/<tên_file>/  → Ảnh serve trên web
    #
    # Ví dụ project khác: --project "qr_pay", --project "tokenization"
 
-3. Trên Dify: upload CHỈ file .md (output) vào Knowledge Base
-   → KHÔNG cần upload PDF gốc (file .md đã chứa đầy đủ text + mô tả bảng/diagram)
+3. Trên Dify: upload file *_kb.md vào Knowledge Base
+   ⚠️ KHÔNG dùng *_full.md — chứa image links relative path,
+      gây lỗi indexing stuck 0% (Dify worker cố download ảnh nhưng thất bại)
+   → KHÔNG cần upload PDF gốc (file _kb.md đã chứa text + mô tả bảng/diagram)
 ```
 
 ### Bước 5: Tạo Chatflow & Link Knowledge Base
@@ -337,6 +340,72 @@ cd ~/chatbot/runtime/dify/api
 uv run flask db stamp heads
 cd ~/chatbot && ./scripts/ubuntu/manage.sh start
 ```
+
+### WebSocket lỗi trên Dify Dashboard (ws://localhost:5001/socket.io)
+
+**Triệu chứng:** Firefox/Chrome console hiện:
+```
+NS_ERROR_WEBSOCKET_CONNECTION_REFUSED
+WebSocket connection error: Error: websocket error
+Cannot receive from redis... retrying in 1 secs  (lặp liên tục trong log)
+```
+
+**Có 2 nguyên nhân phổ biến:**
+
+#### Nguyên nhân 1: Dùng `flask run` thay vì `gunicorn`
+
+Flask dev server không hỗ trợ WebSocket/socket.io.
+
+```bash
+# Kiểm tra:
+ps aux | grep -E "flask|gunicorn" | grep -v grep
+
+# Nếu thấy "flask run" → SAI. Cần restart:
+./scripts/ubuntu/manage.sh restart dify-api
+
+# Nếu log hiện "Redis requires a monkey patched socket library":
+# → Đang chạy bằng flask run hoặc python app.py thay vì gunicorn.
+# stack.v3.3.json đã cấu hình gunicorn mặc định.
+```
+
+#### Nguyên nhân 2: Redis RESP3 protocol (phổ biến nhất)
+
+`python-socketio` 5.x RedisManager không hỗ trợ RESP3 pubsub.
+Dify mặc định dùng `REDIS_SERIALIZATION_PROTOCOL=3` → socket.io pubsub vỡ.
+
+```bash
+# Kiểm tra:
+grep REDIS_SERIALIZATION_PROTOCOL ~/chatbot/runtime/dify/api/.env
+# Nếu = 3 hoặc không có dòng này → cần fix:
+
+echo 'REDIS_SERIALIZATION_PROTOCOL=2' >> ~/chatbot/runtime/dify/api/.env
+./scripts/ubuntu/manage.sh restart dify-api
+
+# Verify — log KHÔNG được có "Cannot receive from redis":
+sleep 5 && tail -10 ~/chatbot/runtime/ubuntu-stack/logs/dify-api.out.log
+```
+
+#### Checklist chung
+```bash
+# 1. Redis đang chạy?
+redis-cli ping    # Phải trả về: PONG
+
+# 2. Gunicorn đang chạy (không phải flask)?
+ps aux | grep gunicorn | grep -v grep
+
+# 3. REDIS_SERIALIZATION_PROTOCOL=2?
+grep REDIS_SERIALIZATION_PROTOCOL ~/chatbot/runtime/dify/api/.env
+```
+
+> **Lưu ý:** `stack.v3.3.json` và `configure-dify-env.sh` đã được update
+> để dùng gunicorn + RESP2 mặc định. Nếu server đang dùng config cũ:
+> ```bash
+> cp scripts/ubuntu/stack.v3.3.json runtime/ubuntu-stack/stack.local.json
+> # Thêm RESP2 vào .env nếu chưa có:
+> grep -q REDIS_SERIALIZATION_PROTOCOL ~/chatbot/runtime/dify/api/.env \
+>   || echo 'REDIS_SERIALIZATION_PROTOCOL=2' >> ~/chatbot/runtime/dify/api/.env
+> ./scripts/ubuntu/manage.sh stop && ./scripts/ubuntu/manage.sh start
+> ```
 
 ### Frontend không hiển thị ảnh
 ```bash

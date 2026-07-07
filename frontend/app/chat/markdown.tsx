@@ -67,8 +67,13 @@ export function renderMarkdown(content: string) {
         h1({ node, ...props }: any) { return <h1 className="text-2xl font-bold mt-6 mb-4" style={{ color: 'var(--text-primary)' }} {...props} /> },
         h2({ node, ...props }: any) { return <h2 className="text-xl font-bold mt-5 mb-3" style={{ color: 'var(--text-primary)' }} {...props} /> },
         h3({ node, ...props }: any) { return <h3 className="text-lg font-semibold mt-4 mb-2" style={{ color: 'var(--text-primary)' }} {...props} /> },
-        a({ node, ...props }: any) {
-          return <a className="underline hover:opacity-80 transition-opacity" style={{ color: 'var(--accent-primary)' }} target="_blank" rel="noopener noreferrer" {...props} />
+        a({ node, href, children, ...props }: any) {
+          // Auto-render /docs/ links as images (from KB markdown: [📎 alt](/docs/...))
+          if (href && /^\/docs\/.*\.(png|jpe?g|gif|webp|svg)$/i.test(href)) {
+            const alt = String(children || '').replace(/^📎\s*/, '')
+            return <ChatImage src={href} alt={alt} />
+          }
+          return <a className="underline hover:opacity-80 transition-opacity" style={{ color: 'var(--accent-primary)' }} target="_blank" rel="noopener noreferrer" href={href} {...props}>{children}</a>
         }
       }}
     >

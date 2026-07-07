@@ -30,6 +30,13 @@ if [ ! -f "$API_ENV" ] && [ -f "$API_EXAMPLE" ]; then
     sed -i 's/^BROKER_USE_SSL=.*/BROKER_USE_SSL=false/' "$API_ENV"
     sed -i 's/^CELERY_BROKER_URL=.*/CELERY_BROKER_URL=redis:\/\/localhost:6379\/1/' "$API_ENV"
 
+    # Force RESP2 — python-socketio 5.x RedisManager không hỗ trợ RESP3 pubsub
+    if ! grep -q '^REDIS_SERIALIZATION_PROTOCOL=' "$API_ENV"; then
+        echo 'REDIS_SERIALIZATION_PROTOCOL=2' >> "$API_ENV"
+    else
+        sed -i 's/^REDIS_SERIALIZATION_PROTOCOL=.*/REDIS_SERIALIZATION_PROTOCOL=2/' "$API_ENV"
+    fi
+
     # Console URL — Dify Web chạy trên 3001, không phải 3000 (mặc định Dify)
     sed -i 's/^CONSOLE_WEB_URL=.*/CONSOLE_WEB_URL=http:\/\/localhost:3001/' "$API_ENV"
     sed -i 's/^CONSOLE_CORS_ALLOW_ORIGINS=.*/CONSOLE_CORS_ALLOW_ORIGINS=http:\/\/localhost:3001/' "$API_ENV"
@@ -53,6 +60,13 @@ if [ ! -f "$WEB_ENV" ] && [ -f "$WEB_EXAMPLE" ]; then
     
     sed -i 's/^NEXT_PUBLIC_API_PREFIX=.*/NEXT_PUBLIC_API_PREFIX=http:\/\/127.0.0.1:5001\/console\/api/' "$WEB_ENV"
     sed -i 's/^NEXT_PUBLIC_PUBLIC_API_PREFIX=.*/NEXT_PUBLIC_PUBLIC_API_PREFIX=http:\/\/127.0.0.1:5001\/api/' "$WEB_ENV"
+
+    # Socket.IO WebSocket URL — trỏ tới Dify API gunicorn
+    if ! grep -q '^NEXT_PUBLIC_SOCKET_URL=' "$WEB_ENV"; then
+        echo 'NEXT_PUBLIC_SOCKET_URL=ws://127.0.0.1:5001' >> "$WEB_ENV"
+    else
+        sed -i 's|^NEXT_PUBLIC_SOCKET_URL=.*|NEXT_PUBLIC_SOCKET_URL=ws://127.0.0.1:5001|' "$WEB_ENV"
+    fi
 fi
 
 # Configure Chatbot Frontend env
