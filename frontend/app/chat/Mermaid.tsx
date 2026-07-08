@@ -18,6 +18,13 @@ function fixMermaidSyntax(code: string): string {
   fixed = fixed.replace(/([^\n\s])(participant )/g, '$1\n$2');
   fixed = fixed.replace(/([^\n\s])(Note (over|left of|right of|right|left))/g, '$1\n$2');
   
+  // 1. Chống lỗi "got NUM" khi LLM dùng actor bắt đầu bằng số (như 3DS Requestor)
+  // Mermaid sẽ crash nếu actor không được bọc ngoặc kép mà lại bắt đầu bằng số.
+  fixed = fixed.replace(/3DS\s?Requestor/gi, 'ThreeDS_Requestor');
+  fixed = fixed.replace(/3DS\s?Server/gi, 'ThreeDS_Server');
+  fixed = fixed.replace(/3DSS/gi, 'ThreeDSS');
+  fixed = fixed.replace(/\b3DS\b/gi, 'ThreeDS');
+  
   if ((fixed.includes('->>') || fixed.includes('-->>')) && !/^(sequenceDiagram|graph|flowchart)/i.test(fixed)) {
     fixed = 'sequenceDiagram\n' + fixed;
   }
@@ -28,9 +35,10 @@ function fixMermaidSyntax(code: string): string {
     let l = line.trim();
     if (!l) return l;
 
-    // Loại bỏ các số/bullet LLM hay tự ý sinh thêm ở đầu câu (vd "1. A->>B", "- A->>B")
-    if (l.match(/^(\d+\.|-|\*)\s+/)) {
-      l = l.replace(/^(\d+\.|-|\*)\s+/, '');
+    // 2. Loại bỏ các số/bullet LLM hay tự ý sinh thêm ở đầu câu (vd "1. ", "1.1.", "- ", "*")
+    // Dấu cách phía sau là tuỳ chọn (\s*) để bắt luôn cả trường hợp "1.ACS->>DS"
+    if (l.match(/^((?:\d+\.)+|-|\*)\s*/)) {
+      l = l.replace(/^((?:\d+\.)+|-|\*)\s*/, '');
     }
 
     const arrowMatch = l.match(/(->>|-->>|->|-->)/);
