@@ -12,9 +12,11 @@ mermaid.initialize({
 function fixMermaidSyntax(code: string): string {
   let fixed = code.trim();
   
-  // 0. Sửa lỗi dính chữ (thiếu xuống dòng trước participant hoặc Note)
-  fixed = fixed.replace(/([^\n])\s*(participant )/g, '$1\n$2');
-  fixed = fixed.replace(/([^\n])\s*(Note )/g, '$1\n$2');
+  // 0. Sửa lỗi dính chữ (thiếu xuống dòng trước participant hoặc Note do LLM quên \n)
+  // Fix đặc trị cho các ca: "autonumberparticipant", "tạo thanh toánNote over", "AReqNote left of"
+  fixed = fixed.replace(/autonumberparticipant/g, 'autonumber\nparticipant');
+  fixed = fixed.replace(/([^\n\s])(participant )/g, '$1\n$2');
+  fixed = fixed.replace(/([^\n\s])(Note (over|left of|right of|right|left))/g, '$1\n$2');
   
   if ((fixed.includes('->>') || fixed.includes('-->>')) && !/^(sequenceDiagram|graph|flowchart)/i.test(fixed)) {
     fixed = 'sequenceDiagram\n' + fixed;
