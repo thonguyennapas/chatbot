@@ -121,15 +121,11 @@ export default function Mermaid({ chart }: { chart: string }) {
             position: 'fixed',
             top: 0,
             left: 0,
-            width: '100vw',
-            height: '100vh',
+            right: 0,
+            bottom: 0,
             zIndex: 9999,
             backgroundColor: 'rgba(0,0,0,0.85)',
-            display: 'flex',
-            // MUST NOT use align-items:center or justify-content:center here, 
-            // otherwise large SVGs get clipped on top/left and can't be scrolled.
-            overflow: 'auto',
-            padding: '2rem',
+            display: 'block', // Use block instead of flex to avoid flexbox SVG intrinsic bugs
             margin: 0,
             maxWidth: 'none',
             borderRadius: 0,
@@ -149,18 +145,22 @@ export default function Mermaid({ chart }: { chart: string }) {
           </button>
           <style dangerouslySetInnerHTML={{__html: `
             .mermaid-fullscreen > svg {
-              background-color: white;
-              padding: 1.5rem;
-              border-radius: 1rem;
-              margin: auto;
+              position: absolute !important;
+              top: 50% !important;
+              left: 50% !important;
+              transform: translate(-50%, -50%) !important;
               
-              /* Ép biểu đồ tự động thu nhỏ lại để vừa khít màn hình, không bao giờ bị tràn */
-              max-width: 95vw !important;
-              max-height: 95vh !important;
-              width: 100% !important;
-              height: 100% !important;
+              background-color: white !important;
+              padding: 20px !important;
+              border-radius: 12px !important;
               
-              box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+              /* Ép biểu đồ thu nhỏ lại vừa khít màn hình */
+              max-width: 90vw !important;
+              max-height: 90vh !important;
+              width: auto !important;
+              height: auto !important;
+              
+              box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
             }
           `}} />
         </>

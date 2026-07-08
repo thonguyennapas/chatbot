@@ -153,20 +153,35 @@ function ChatImage({ src, alt }: { src: string; alt: string }) {
 
       {isFullscreen && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center"
-          style={{ background: 'rgba(0, 0, 0, 0.85)', cursor: 'pointer' }}
+          className="fixed inset-0 z-[9999]"
+          style={{ background: 'rgba(0, 0, 0, 0.85)', cursor: 'zoom-out' }}
           onClick={() => setIsFullscreen(false)}
         >
           <button
-            className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full text-white text-xl hover:bg-white/20"
-            onClick={() => setIsFullscreen(false)}
+            className="absolute top-4 right-4 z-[10000] flex h-10 w-10 items-center justify-center rounded-full text-white text-xl hover:bg-white/20"
+            onClick={(e) => { e.stopPropagation(); setIsFullscreen(false); }}
           >
             ✕
           </button>
           <img
             src={src}
             alt={alt || ''}
-            style={{ maxWidth: '95vw', maxHeight: '95vh', objectFit: 'contain' }}
+            style={{ 
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              maxWidth: '90vw', 
+              maxHeight: '90vh',
+              width: 'auto',
+              height: 'auto',
+              objectFit: 'contain',
+              backgroundColor: 'white',
+              padding: '10px',
+              borderRadius: '8px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }}
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
