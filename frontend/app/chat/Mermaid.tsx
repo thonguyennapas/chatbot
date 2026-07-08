@@ -12,6 +12,10 @@ mermaid.initialize({
 function fixMermaidSyntax(code: string): string {
   let fixed = code.trim();
   
+  // 0. Sửa lỗi dính chữ (thiếu xuống dòng trước participant hoặc Note)
+  fixed = fixed.replace(/([^\n])\s*(participant )/g, '$1\n$2');
+  fixed = fixed.replace(/([^\n])\s*(Note )/g, '$1\n$2');
+  
   if ((fixed.includes('->>') || fixed.includes('-->>')) && !/^(sequenceDiagram|graph|flowchart)/i.test(fixed)) {
     fixed = 'sequenceDiagram\n' + fixed;
   }
@@ -54,6 +58,18 @@ function fixMermaidSyntax(code: string): string {
       if (/^[A-Za-z0-9_]+:/.test(l) && !l.startsWith('Note ') && !l.startsWith('participant ')) {
         l = l.replace(/^([A-Za-z0-9_]+):\s*(.*)$/, 'Note over $1: $2');
       }
+      
+      // 6. Lỗi thiếu text/khoảng trắng sau Note: "Note over A,B:"
+      if (l.startsWith('Note ')) {
+        if (!l.includes(':')) l += ': ';
+        if (l.endsWith(':')) l += ' ';
+        l = l.replace(/(Note [^:]+:)([^\s])/, '$1 $2');
+      }
+    }
+    
+    // 7. Fix lỗi dùng ngoặc đơn sai quy tắc trong tên participant (vd: participant A(Merchant))
+    if (l.startsWith('participant ') && l.includes('(') && !l.includes('"')) {
+      l = l.replace(/\(.*$/, '').trim();
     }
     
     return l;
