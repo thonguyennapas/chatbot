@@ -153,7 +153,7 @@ function ChatImage({ src, alt }: { src: string; alt: string }) {
 
       {isFullscreen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
+          className="fixed inset-0 z-[9999] flex items-center justify-center"
           style={{ background: 'rgba(0, 0, 0, 0.85)', cursor: 'pointer' }}
           onClick={() => setIsFullscreen(false)}
         >

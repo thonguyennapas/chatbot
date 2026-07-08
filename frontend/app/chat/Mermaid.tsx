@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import mermaid from 'mermaid'
 
 mermaid.initialize({
@@ -11,21 +11,24 @@ mermaid.initialize({
 
 export default function Mermaid({ chart }: { chart: string }) {
   const ref = useRef<HTMLDivElement>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [svgContent, setSvgContent] = useState<string>('')
 
   useEffect(() => {
-    if (!ref.current || !chart) return
+    if (!chart) return
 
     const renderChart = async () => {
       try {
         const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`
         const { svg } = await mermaid.render(id, chart)
+        setSvgContent(svg)
         if (ref.current) {
           ref.current.innerHTML = svg
         }
       } catch (error: any) {
         // While streaming, syntax errors are expected. Don't crash, just show raw or wait.
         console.warn('Mermaid render error (likely streaming incomplete):', error?.message || error)
-        if (ref.current && !ref.current.innerHTML) {
+        if (!svgContent && ref.current) {
             // Show raw text temporarily while it's building or if it fails completely
             ref.current.innerHTML = `<pre class="text-xs text-gray-400 overflow-hidden">${chart}</pre>`
         }
@@ -36,9 +39,33 @@ export default function Mermaid({ chart }: { chart: string }) {
   }, [chart])
 
   return (
-    <div 
-      ref={ref} 
-      className="mermaid my-4 flex justify-center overflow-x-auto rounded-lg bg-white p-4 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700" 
-    />
+    <>
+      <div 
+        ref={ref} 
+        onClick={() => { if (svgContent) setIsFullscreen(true) }}
+        style={{ cursor: svgContent ? 'zoom-in' : 'default' }}
+        className="mermaid my-4 flex justify-center overflow-x-auto rounded-lg bg-white p-4 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:shadow-md transition-shadow" 
+      />
+
+      {isFullscreen && svgContent && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0, 0, 0, 0.85)', cursor: 'zoom-out' }}
+          onClick={() => setIsFullscreen(false)}
+        >
+          <button
+            className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full text-white text-xl hover:bg-white/20"
+            onClick={() => setIsFullscreen(false)}
+          >
+            ✕
+          </button>
+          <div 
+            className="bg-white rounded-xl p-6 max-w-[95vw] max-h-[95vh] overflow-auto shadow-2xl"
+            dangerouslySetInnerHTML={{ __html: svgContent }} 
+            onClick={(e) => e.stopPropagation()} // Allow clicking inside without closing
+          />
+        </div>
+      )}
+    </>
   )
 }
