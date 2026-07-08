@@ -9,6 +9,26 @@ mermaid.initialize({
   securityLevel: 'loose',
 })
 
+function fixMermaidSyntax(code: string): string {
+  let fixed = code.trim();
+  
+  // 1. Nếu có mũi tên sequence nhưng thiếu khai báo loại biểu đồ
+  if ((fixed.includes('->>') || fixed.includes('-->>')) && !/^(sequenceDiagram|graph|flowchart)/i.test(fixed)) {
+    fixed = 'sequenceDiagram\n' + fixed;
+  }
+  
+  // 2. Fix lỗi thiếu đích đến (ví dụ `A->>\n` hoặc đang gõ dở ở cuối file `A->>`)
+  fixed = fixed.replace(/(->>|-->>|->|-->)\s*(\n|$)/g, '$1?\n');
+  
+  // 3. Fix lỗi dấu hai chấm ở cuối dòng mà không có text (`A->>B:\n`)
+  fixed = fixed.replace(/(->>|-->>|->|-->)([^:\n]+):\s*(\n|$)/g, '$1$2\n');
+  
+  // 4. Đảm bảo có khoảng trắng sau dấu hai chấm để tránh lỗi cú pháp
+  fixed = fixed.replace(/(->>|-->>|->|-->)([^:\n]+):([^\s\n])/g, '$1$2: $3');
+
+  return fixed;
+}
+
 export default function Mermaid({ chart }: { chart: string }) {
   const ref = useRef<HTMLDivElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -20,7 +40,8 @@ export default function Mermaid({ chart }: { chart: string }) {
     const renderChart = async () => {
       try {
         const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`
-        const { svg } = await mermaid.render(id, chart)
+        const safeChart = fixMermaidSyntax(chart)
+        const { svg } = await mermaid.render(id, safeChart)
         setSvgContent(svg)
         if (ref.current) {
           ref.current.innerHTML = svg
