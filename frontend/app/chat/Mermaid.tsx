@@ -35,10 +35,13 @@ function fixMermaidSyntax(code: string): string {
   }
 
   const isSequence = /sequenceDiagram/i.test(fixed);
+  const validKeywords = /^(participant|actor|Note|loop|alt|opt|else|end|rect|autonumber|title|box|sequenceDiagram|%|par|and|critical|option|break|destroy|link|activate|deactivate)/i;
+  
+  const processedLines: string[] = [];
 
-  const lines = fixed.split('\n').map(line => {
+  fixed.split('\n').forEach(line => {
     let l = line.trim();
-    if (!l) return l;
+    if (!l) return;
 
     // 2. Loại bỏ các số/bullet LLM hay tự ý sinh thêm ở đầu câu
     // Xóa "1.", "1.1.", "1)", "2-" (ngay cả khi không có dấu cách)
@@ -76,29 +79,46 @@ function fixMermaidSyntax(code: string): string {
       // 4. Lỗi thiếu khoảng trắng sau hai chấm: "A->>B:text" -> "A->>B: text"
       l = l.replace(/(->>|-->>|->|-->)([^:]+):([^\s])/, '$1$2: $3');
 
+      processedLines.push(l);
     } else if (!arrowMatch && isSequence) {
       // 5. Lỗi LLM tự chế syntax note: "DS: Results" -> "Note over DS: Results"
       if (/^[A-Za-z0-9_]+:/.test(l) && !l.startsWith('Note ') && !l.startsWith('participant ')) {
         l = l.replace(/^([A-Za-z0-9_]+):\s*(.*)$/, 'Note over $1: $2');
-      }
-
-      // 6. Lỗi thiếu text/khoảng trắng sau Note: "Note over A,B:"
-      if (l.startsWith('Note ')) {
+        processedLines.push(l);
+      } else if (l.startsWith('Note ')) {
+        // 6. Lỗi thiếu text/khoảng trắng sau Note: "Note over A,B:"
         if (!l.includes(':')) l += ': ';
         if (l.endsWith(':')) l += ' ';
         l = l.replace(/(Note [^:]+:)([^\s])/, '$1 $2');
+        processedLines.push(l);
+      } else if (!validKeywords.test(l)) {
+        // CỨU CÁNH TUYỆT ĐỐI: Dòng này KHÔNG có mũi tên, KHÔNG phải keyword hợp lệ.
+        // Đây chắc chắn là text rác, danh sách liệt kê, hoặc câu bị rớt dòng từ LLM.
+        // Nếu để nguyên, Mermaid sẽ nghĩ đây là Actor mới và crash (got 'NEWLINE') vì thiếu mũi tên.
+        // Giải pháp: Nối nó vào cuối dòng trước đó bằng thẻ <br/> để biến thành text đa dòng an toàn.
+        if (processedLines.length > 0) {
+          processedLines[processedLines.length - 1] += '<br/>' + l;
+        } else {
+          processedLines.push('% ' + l); // Nếu là dòng đầu tiên thì comment lại
+        }
+      } else {
+        processedLines.push(l);
       }
+    } else {
+      processedLines.push(l);
     }
 
     // 7. Fix lỗi dùng ngoặc đơn sai quy tắc trong tên participant (vd: participant A(Merchant))
-    if (l.startsWith('participant ') && l.includes('(') && !l.includes('"')) {
-      l = l.replace(/\(.*$/, '').trim();
+    if (processedLines.length > 0) {
+      const lastIdx = processedLines.length - 1;
+      let lastLine = processedLines[lastIdx];
+      if (lastLine.startsWith('participant ') && lastLine.includes('(') && !lastLine.includes('"')) {
+        processedLines[lastIdx] = lastLine.replace(/\(.*$/, '').trim();
+      }
     }
-
-    return l;
   });
 
-  return lines.join('\n');
+  return processedLines.join('\n');
 }
 
 export default function Mermaid({ chart }: { chart: string }) {
