@@ -54,14 +54,14 @@ except ImportError:
 
 IMAGE_BASE_URL_DEFAULT = "/docs"
 
-PROMPT_DIAGRAM = """Mô tả chi tiết nội dung của ảnh/diagram này bằng tiếng Việt.
+PROMPT_DIAGRAM = """Describe the detailed content of this image/diagram in English.
 
-Quy tắc:
-- Nếu đây là SƠ ĐỒ LUỒNG (flowchart/sequence diagram): liệt kê TỪNG BƯỚC theo thứ tự, mô tả mũi tên/kết nối giữa các component.
-- Nếu đây là KIẾN TRÚC HỆ THỐNG: liệt kê các component, kết nối, protocol, port.
-- Nếu đây là BIỂU ĐỒ: mô tả dữ liệu, trục, xu hướng.
-- Nếu có TEXT trong ảnh: trích xuất nguyên văn.
-- Mô tả càng chi tiết càng tốt — text này sẽ được index để search.
+Rules:
+- If this is a FLOWCHART/SEQUENCE DIAGRAM: list EACH STEP in order, describe arrows/connections between components.
+- If this is a SYSTEM ARCHITECTURE: list components, connections, protocols, ports.
+- If this is a CHART: describe data, axes, trends.
+- If there is TEXT in the image: extract verbatim.
+- Describe as detailed as possible — this text will be indexed for search.
 """
 
 def describe_image_with_vision(
