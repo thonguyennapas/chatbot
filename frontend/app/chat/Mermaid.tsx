@@ -12,21 +12,33 @@ mermaid.initialize({
 function fixMermaidSyntax(code: string): string {
   let fixed = code.trim();
   
-  // 1. Nếu có mũi tên sequence nhưng thiếu khai báo loại biểu đồ
   if ((fixed.includes('->>') || fixed.includes('-->>')) && !/^(sequenceDiagram|graph|flowchart)/i.test(fixed)) {
     fixed = 'sequenceDiagram\n' + fixed;
   }
   
-  // 2. Fix lỗi thiếu đích đến (ví dụ `A->>\n` hoặc đang gõ dở ở cuối file `A->>`)
-  fixed = fixed.replace(/(->>|-->>|->|-->)\s*(\n|$)/g, '$1?\n');
-  
-  // 3. Fix lỗi dấu hai chấm ở cuối dòng mà không có text (`A->>B:\n`)
-  fixed = fixed.replace(/(->>|-->>|->|-->)([^:\n]+):\s*(\n|$)/g, '$1$2\n');
-  
-  // 4. Đảm bảo có khoảng trắng sau dấu hai chấm để tránh lỗi cú pháp
-  fixed = fixed.replace(/(->>|-->>|->|-->)([^:\n]+):([^\s\n])/g, '$1$2: $3');
+  const lines = fixed.split('\n').map(line => {
+    let l = line.trim();
+    if (!l) return l;
 
-  return fixed;
+    // 1. Fix missing target: A->>
+    l = l.replace(/(->>|-->>|->|-->)$/, '$1?');
+    
+    // 2. Fix missing text after colon: A->>B:
+    l = l.replace(/(->>|-->>|->|-->)([^:]+):$/, '$1$2: ');
+    
+    // 3. Fix missing space after colon: A->>B:text
+    l = l.replace(/(->>|-->>|->|-->)([^:]+):([^\s])/, '$1$2: $3');
+    
+    // 4. Fix invalid standalone lines (e.g. "DS: 12. Results") -> "Note over DS: 12. Results"
+    // Matches lines that start with Alphanumeric, have a colon, but NO arrows.
+    if (/^[A-Za-z0-9_]+:/.test(l) && !l.includes('->') && !l.includes('--')) {
+      l = l.replace(/^([A-Za-z0-9_]+):\s*(.*)$/, 'Note over $1: $2');
+    }
+    
+    return l;
+  });
+  
+  return lines.join('\n');
 }
 
 export default function Mermaid({ chart }: { chart: string }) {
@@ -81,10 +93,21 @@ export default function Mermaid({ chart }: { chart: string }) {
             ✕
           </button>
           <div 
-            className="bg-white rounded-xl p-6 max-w-[95vw] max-h-[95vh] overflow-auto shadow-2xl"
+            className="bg-white rounded-xl p-6 w-[95vw] h-[95vh] flex items-center justify-center overflow-auto shadow-2xl mermaid-fullscreen"
             dangerouslySetInnerHTML={{ __html: svgContent }} 
-            onClick={(e) => e.stopPropagation()} // Allow clicking inside without closing
+            onClick={(e) => e.stopPropagation()}
+            style={{ 
+              // Force SVG to be visible and responsive inside the flex container
+              display: 'flex'
+            }}
           />
+          <style dangerouslySetInnerHTML={{__html: `
+            .mermaid-fullscreen svg {
+              width: 100% !important;
+              height: 100% !important;
+              max-width: none !important;
+            }
+          `}} />
         </div>
       )}
     </>
