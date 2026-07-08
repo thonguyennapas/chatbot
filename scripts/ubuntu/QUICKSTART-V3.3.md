@@ -181,7 +181,7 @@ Kéo thả file PDF/DOCX/TXT/CSV/Markdown vào.
 2. Pre-processing (extract text + bảng + diagram → 1 file .md):
 
    # Cài Python deps (chỉ lần đầu)
-   pip3 install -r scripts/requirements.txt
+   pip3 install -r scripts/requirements.txt pymupdf4llm requests
 
    # Scan trước để xem thống kê + ước tính chi phí
    python3 scripts/preprocess_multimodal.py \

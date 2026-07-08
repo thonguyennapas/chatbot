@@ -13,17 +13,26 @@ export default function Mermaid({ chart }: { chart: string }) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (ref.current) {
-      mermaid.contentLoaded()
+    if (!ref.current || !chart) return
+
+    const renderChart = async () => {
       try {
         const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`
-        mermaid.render(id, chart).then(({ svg }) => {
-          if (ref.current) ref.current.innerHTML = svg
-        })
-      } catch (error) {
-        console.error('Mermaid render error:', error)
+        const { svg } = await mermaid.render(id, chart)
+        if (ref.current) {
+          ref.current.innerHTML = svg
+        }
+      } catch (error: any) {
+        // While streaming, syntax errors are expected. Don't crash, just show raw or wait.
+        console.warn('Mermaid render error (likely streaming incomplete):', error?.message || error)
+        if (ref.current && !ref.current.innerHTML) {
+            // Show raw text temporarily while it's building or if it fails completely
+            ref.current.innerHTML = `<pre class="text-xs text-gray-400 overflow-hidden">${chart}</pre>`
+        }
       }
     }
+
+    renderChart()
   }, [chart])
 
   return (
