@@ -24,6 +24,11 @@ function fixMermaidSyntax(code: string): string {
   fixed = fixed.replace(/3DS\s?Server/gi, 'ThreeDS_Server');
   fixed = fixed.replace(/3DSS/gi, 'ThreeDSS');
   fixed = fixed.replace(/\b3DS\b/gi, 'ThreeDS');
+  fixed = fixed.replace(/3D\s?Secure/gi, 'ThreeD_Secure');
+  fixed = fixed.replace(/3D-Secure/gi, 'ThreeD_Secure');
+  fixed = fixed.replace(/\b1st\b/gi, 'First');
+  fixed = fixed.replace(/\b2nd\b/gi, 'Second');
+  fixed = fixed.replace(/\b3rd\b/gi, 'Third');
 
   if ((fixed.includes('->>') || fixed.includes('-->>')) && !/^(sequenceDiagram|graph|flowchart)/i.test(fixed)) {
     fixed = 'sequenceDiagram\n' + fixed;
@@ -35,10 +40,18 @@ function fixMermaidSyntax(code: string): string {
     let l = line.trim();
     if (!l) return l;
 
-    // 2. Loại bỏ các số/bullet LLM hay tự ý sinh thêm ở đầu câu (vd "1. ", "1.1.", "- ", "*")
-    // Dấu cách phía sau là tuỳ chọn (\s*) để bắt luôn cả trường hợp "1.ACS->>DS"
-    if (l.match(/^((?:\d+\.)+|-|\*)\s*/)) {
-      l = l.replace(/^((?:\d+\.)+|-|\*)\s*/, '');
+    // 2. Loại bỏ các số/bullet LLM hay tự ý sinh thêm ở đầu câu
+    // Xóa "1.", "1.1.", "1)", "2-" (ngay cả khi không có dấu cách)
+    l = l.replace(/^((?:\d+[\.\)\-])+)\s*/, '');
+    // Xóa số đứng một mình có dấu cách "3 ACS"
+    l = l.replace(/^\d+\s+/, '');
+    // Xóa "- ", "* " (bắt buộc có dấu cách để không ăn mất "->>")
+    l = l.replace(/^[\-\*]\s+/, '');
+    
+    // Cứu cánh cuối cùng: Nếu dòng vẫn bắt đầu bằng số sau mọi bộ lọc (vd LLM chế ra "5G->>"),
+    // Mermaid CHẮC CHẮN sẽ crash. Ta đệm thêm "Actor_" để biến nó thành biến hợp lệ.
+    if (/^\d/.test(l)) {
+      l = 'Actor_' + l;
     }
 
     const arrowMatch = l.match(/(->>|-->>|->|-->)/);
