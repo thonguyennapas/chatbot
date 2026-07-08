@@ -16,23 +16,44 @@ function fixMermaidSyntax(code: string): string {
     fixed = 'sequenceDiagram\n' + fixed;
   }
   
+  const isSequence = /sequenceDiagram/i.test(fixed);
+  
   const lines = fixed.split('\n').map(line => {
     let l = line.trim();
     if (!l) return l;
 
-    // 1. Fix missing target: A->>
-    l = l.replace(/(->>|-->>|->|-->)$/, '$1?');
+    // Loại bỏ các số/bullet LLM hay tự ý sinh thêm ở đầu câu (vd "1. A->>B", "- A->>B")
+    if (l.match(/^(\d+\.|-|\*)\s+/)) {
+      l = l.replace(/^(\d+\.|-|\*)\s+/, '');
+    }
+
+    const arrowMatch = l.match(/(->>|-->>|->|-->)/);
     
-    // 2. Fix missing text after colon: A->>B:
-    l = l.replace(/(->>|-->>|->|-->)([^:]+):$/, '$1$2: ');
-    
-    // 3. Fix missing space after colon: A->>B:text
-    l = l.replace(/(->>|-->>|->|-->)([^:]+):([^\s])/, '$1$2: $3');
-    
-    // 4. Fix invalid standalone lines (e.g. "DS: 12. Results") -> "Note over DS: 12. Results"
-    // Matches lines that start with Alphanumeric, have a colon, but NO arrows.
-    if (/^[A-Za-z0-9_]+:/.test(l) && !l.includes('->') && !l.includes('--')) {
-      l = l.replace(/^([A-Za-z0-9_]+):\s*(.*)$/, 'Note over $1: $2');
+    if (arrowMatch && isSequence) {
+      // 1. Lỗi thiếu target hoàn toàn: "A->>" -> "A->>?"
+      if (l.match(/(->>|-->>|->|-->)$/)) {
+        l += '?';
+      }
+      
+      // 2. Lỗi thiếu dấu hai chấm (sequence bắt buộc phải có thông điệp): "A->>B" -> "A->>B: "
+      const afterArrow = l.substring(l.indexOf(arrowMatch[0]) + arrowMatch[0].length);
+      if (!afterArrow.includes(':')) {
+        l += ': ';
+      }
+      
+      // 3. Lỗi có dấu hai chấm nhưng không có text/khoảng trắng: "A->>B:" -> "A->>B: "
+      if (l.endsWith(':')) {
+        l += ' ';
+      }
+      
+      // 4. Lỗi thiếu khoảng trắng sau hai chấm: "A->>B:text" -> "A->>B: text"
+      l = l.replace(/(->>|-->>|->|-->)([^:]+):([^\s])/, '$1$2: $3');
+      
+    } else if (!arrowMatch && isSequence) {
+      // 5. Lỗi LLM tự chế syntax note: "DS: Results" -> "Note over DS: Results"
+      if (/^[A-Za-z0-9_]+:/.test(l) && !l.startsWith('Note ') && !l.startsWith('participant ')) {
+        l = l.replace(/^([A-Za-z0-9_]+):\s*(.*)$/, 'Note over $1: $2');
+      }
     }
     
     return l;
