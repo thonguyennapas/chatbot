@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic'
 import { IconCopy, IconCheck } from './icons'
 
 const Mermaid = dynamic(() => import('./Mermaid'), { ssr: false })
+const TransformWrapper = dynamic(() => import('react-zoom-pan-pinch').then(mod => mod.TransformWrapper), { ssr: false })
+const TransformComponent = dynamic(() => import('react-zoom-pan-pinch').then(mod => mod.TransformComponent), { ssr: false })
 
 export function renderMarkdown(content: string) {
   if (!content) return null
@@ -154,41 +156,45 @@ function ChatImage({ src, alt }: { src: string; alt: string }) {
 
       {isFullscreen && (
         <div
-          className="fixed inset-0 z-[9999] flex overflow-auto"
-          style={{ background: 'rgba(0, 0, 0, 0.85)', cursor: isZoomed ? 'zoom-out' : 'zoom-in' }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setIsFullscreen(false)
-              setIsZoomed(false)
-            } else {
-              setIsZoomed(!isZoomed)
-            }
-          }}
+          className="fixed inset-0 z-[9999]"
+          style={{ background: 'rgba(0, 0, 0, 0.85)' }}
         >
           <button
-            className="fixed top-4 right-4 z-[10000] flex h-10 w-10 items-center justify-center rounded-full text-white text-xl hover:bg-white/20"
+            className="absolute top-4 right-4 z-[10000] flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white text-xl hover:bg-black/70"
             onClick={(e) => { e.stopPropagation(); setIsFullscreen(false); setIsZoomed(false); }}
           >
             ✕
           </button>
-          <img
-            src={src}
-            alt={alt || ''}
-            style={{ 
-              margin: 'auto',
-              display: 'block',
-              maxWidth: isZoomed ? 'none' : '90vw', 
-              maxHeight: isZoomed ? 'none' : '90vh',
-              width: 'auto',
-              height: 'auto',
-              objectFit: 'contain',
-              backgroundColor: 'white',
-              padding: '10px',
-              borderRadius: '8px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              transition: 'max-width 0.2s, max-height 0.2s'
-            }}
-          />
+
+          <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-[10000]">
+            <div className="bg-black/60 text-white/90 text-sm px-4 py-2 rounded-full backdrop-blur-sm pointer-events-auto shadow-lg">
+               Cuộn chuột để Zoom • Kéo để di chuyển
+            </div>
+          </div>
+
+          <TransformWrapper
+            initialScale={1}
+            minScale={0.5}
+            maxScale={10}
+            centerOnInit={true}
+            wheel={{ step: 0.1 }}
+          >
+            <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img
+                src={src}
+                alt={alt || ''}
+                style={{ 
+                  maxWidth: '90vw', 
+                  maxHeight: '90vh',
+                  objectFit: 'contain',
+                  backgroundColor: 'white',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                }}
+              />
+            </TransformComponent>
+          </TransformWrapper>
         </div>
       )}
     </>

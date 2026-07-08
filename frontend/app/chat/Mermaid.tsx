@@ -2,6 +2,10 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import mermaid from 'mermaid'
+import dynamic from 'next/dynamic'
+
+const TransformWrapper = dynamic(() => import('react-zoom-pan-pinch').then(mod => mod.TransformWrapper), { ssr: false })
+const TransformComponent = dynamic(() => import('react-zoom-pan-pinch').then(mod => mod.TransformComponent), { ssr: false })
 
 mermaid.initialize({
   startOnLoad: true,
@@ -193,38 +197,52 @@ export default function Mermaid({ chart }: { chart: string }) {
       />
 
       {isFullscreen && (
-        <>
+        <div className="fixed inset-0 z-[9999]" style={{ background: 'rgba(0,0,0,0.85)' }}>
           <button
-            className="fixed top-4 right-4 z-[10000] flex h-10 w-10 items-center justify-center rounded-full text-white text-xl hover:bg-white/20"
+            className="absolute top-4 right-4 z-[10000] flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white text-xl hover:bg-black/70"
             onClick={(e) => { e.stopPropagation(); setIsFullscreen(false); setIsZoomed(false); }}
           >
             ✕
           </button>
+
+          <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-[10000]">
+            <div className="bg-black/60 text-white/90 text-sm px-4 py-2 rounded-full backdrop-blur-sm pointer-events-auto shadow-lg">
+               Cuộn chuột để Zoom • Kéo để di chuyển
+            </div>
+          </div>
+
+          <TransformWrapper
+            initialScale={1}
+            minScale={0.2}
+            maxScale={10}
+            centerOnInit={true}
+            wheel={{ step: 0.1 }}
+          >
+            <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div 
+                className="mermaid-fullscreen-content"
+                dangerouslySetInnerHTML={{ __html: svgContent }} 
+              />
+            </TransformComponent>
+          </TransformWrapper>
+          
           <style dangerouslySetInnerHTML={{
             __html: `
-            .mermaid-fullscreen > svg {
-              background-color: white !important;
-              padding: 20px !important;
-              border-radius: 12px !important;
-              
-              /* Kỹ thuật margin auto trong flex container giúp căn giữa mà ko cắt xén top/left khi cuộn */
-              margin: auto !important;
-              
-              /* Nếu không zoom thì thu nhỏ vừa khít (90vw), nếu zoom thì thả nổi kích thước tự nhiên */
-              max-width: ${isZoomed ? 'none' : '90vw'} !important;
-              max-height: ${isZoomed ? 'none' : '90vh'} !important;
-              
-              /* width 100% giúp SVG tự phình ra chạm ngưỡng max-width, khắc phục lỗi SVG biến thành tí hon */
-              width: ${isZoomed ? 'max-content' : '100%'} !important;
-              height: ${isZoomed ? 'auto' : '100%'} !important;
-              
-              min-width: ${isZoomed ? 'min(100%, 800px)' : 'auto'} !important;
-              
-              box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-              transition: max-width 0.2s, max-height 0.2s !important;
+            .mermaid-fullscreen-content {
+               background-color: white;
+               padding: 24px;
+               border-radius: 12px;
+               box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            }
+            .mermaid-fullscreen-content > svg {
+               /* Remove explicit max-width so the zoomer can scale it freely */
+               max-width: 90vw;
+               max-height: 90vh;
+               width: 100%;
+               height: auto;
             }
           `}} />
-        </>
+        </div>
       )}
     </>
   )
