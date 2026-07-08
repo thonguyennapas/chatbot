@@ -124,8 +124,10 @@ export default function Mermaid({ chart }: { chart: string }) {
             zIndex: 9999,
             backgroundColor: 'rgba(0,0,0,0.85)',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            // MUST NOT use align-items:center or justify-content:center here, 
+            // otherwise large SVGs get clipped on top/left and can't be scrolled.
+            overflow: 'auto',
+            padding: '2rem',
             margin: 0,
             maxWidth: 'none',
             borderRadius: 0,
@@ -146,12 +148,18 @@ export default function Mermaid({ chart }: { chart: string }) {
           <style dangerouslySetInnerHTML={{__html: `
             .mermaid-fullscreen > svg {
               background-color: white;
-              padding: 1.5rem;
+              padding: 2rem;
               border-radius: 1rem;
-              max-width: 95vw !important;
-              max-height: 95vh !important;
-              width: auto !important;
+              /* margin: auto acts as a safe flex-center that doesn't clip top/left when overflowing */
+              margin: auto;
+              
+              /* Let the diagram be as large as it needs to be, so users can scroll/pan around */
+              max-width: none !important;
+              max-height: none !important;
+              width: max-content !important;
               height: auto !important;
+              min-width: min(100%, 600px);
+              
               box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             }
           `}} />
