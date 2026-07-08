@@ -96,40 +96,50 @@ export default function Mermaid({ chart }: { chart: string }) {
     <>
       <div 
         ref={ref} 
-        onClick={() => { if (svgContent) setIsFullscreen(true) }}
-        style={{ cursor: svgContent ? 'zoom-in' : 'default' }}
-        className="mermaid my-4 flex justify-center overflow-x-auto rounded-lg bg-white p-4 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:shadow-md transition-shadow" 
+        onClick={() => { if (svgContent) setIsFullscreen(!isFullscreen) }}
+        style={{ 
+          cursor: svgContent ? (isFullscreen ? 'zoom-out' : 'zoom-in') : 'default',
+          ...(isFullscreen ? {
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 9999,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: 0,
+            maxWidth: 'none',
+            borderRadius: 0,
+            border: 'none',
+          } : {})
+        }}
+        className={!isFullscreen ? 'mermaid my-4 flex justify-center overflow-x-auto rounded-lg bg-white p-4 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:shadow-md transition-shadow' : 'mermaid-fullscreen'}
       />
 
-      {isFullscreen && svgContent && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-          style={{ background: 'rgba(0, 0, 0, 0.85)', cursor: 'zoom-out' }}
-          onClick={() => setIsFullscreen(false)}
-        >
+      {isFullscreen && (
+        <>
           <button
-            className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full text-white text-xl hover:bg-white/20"
-            onClick={() => setIsFullscreen(false)}
+            className="fixed top-4 right-4 z-[10000] flex h-10 w-10 items-center justify-center rounded-full text-white text-xl hover:bg-white/20"
+            onClick={(e) => { e.stopPropagation(); setIsFullscreen(false); }}
           >
             ✕
           </button>
-          <div 
-            className="bg-white rounded-xl p-6 w-[95vw] h-[95vh] flex items-center justify-center overflow-auto shadow-2xl mermaid-fullscreen"
-            dangerouslySetInnerHTML={{ __html: svgContent }} 
-            onClick={(e) => e.stopPropagation()}
-            style={{ 
-              // Force SVG to be visible and responsive inside the flex container
-              display: 'flex'
-            }}
-          />
           <style dangerouslySetInnerHTML={{__html: `
-            .mermaid-fullscreen svg {
-              width: 100% !important;
-              height: 100% !important;
-              max-width: none !important;
+            .mermaid-fullscreen > svg {
+              background-color: white;
+              padding: 1.5rem;
+              border-radius: 1rem;
+              max-width: 95vw !important;
+              max-height: 95vh !important;
+              width: auto !important;
+              height: auto !important;
+              box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             }
           `}} />
-        </div>
+        </>
       )}
     </>
   )
