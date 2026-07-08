@@ -114,6 +114,7 @@ function CopyButton({ text }: { text: string }) {
 /** Inline image with click-to-zoom fullscreen overlay */
 function ChatImage({ src, alt }: { src: string; alt: string }) {
   const [isFullscreen, setIsFullscreen] = React.useState(false)
+  const [isZoomed, setIsZoomed] = React.useState(false)
   const [hasError, setHasError] = React.useState(false)
 
   if (hasError) {
@@ -153,13 +154,20 @@ function ChatImage({ src, alt }: { src: string; alt: string }) {
 
       {isFullscreen && (
         <div
-          className="fixed inset-0 z-[9999]"
-          style={{ background: 'rgba(0, 0, 0, 0.85)', cursor: 'zoom-out' }}
-          onClick={() => setIsFullscreen(false)}
+          className="fixed inset-0 z-[9999] flex overflow-auto"
+          style={{ background: 'rgba(0, 0, 0, 0.85)', cursor: isZoomed ? 'zoom-out' : 'zoom-in' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsFullscreen(false)
+              setIsZoomed(false)
+            } else {
+              setIsZoomed(!isZoomed)
+            }
+          }}
         >
           <button
-            className="absolute top-4 right-4 z-[10000] flex h-10 w-10 items-center justify-center rounded-full text-white text-xl hover:bg-white/20"
-            onClick={(e) => { e.stopPropagation(); setIsFullscreen(false); }}
+            className="fixed top-4 right-4 z-[10000] flex h-10 w-10 items-center justify-center rounded-full text-white text-xl hover:bg-white/20"
+            onClick={(e) => { e.stopPropagation(); setIsFullscreen(false); setIsZoomed(false); }}
           >
             ✕
           </button>
@@ -167,21 +175,19 @@ function ChatImage({ src, alt }: { src: string; alt: string }) {
             src={src}
             alt={alt || ''}
             style={{ 
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              maxWidth: '90vw', 
-              maxHeight: '90vh',
+              margin: 'auto',
+              display: 'block',
+              maxWidth: isZoomed ? 'none' : '90vw', 
+              maxHeight: isZoomed ? 'none' : '90vh',
               width: 'auto',
               height: 'auto',
               objectFit: 'contain',
               backgroundColor: 'white',
               padding: '10px',
               borderRadius: '8px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              transition: 'max-width 0.2s, max-height 0.2s'
             }}
-            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
