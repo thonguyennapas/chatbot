@@ -203,10 +203,11 @@ export default function Mermaid({ chart }: { chart: string }) {
               minScale={0.1}
               maxScale={10}
               centerOnInit={true}
+              centerZoomedOut={true}
               wheel={{ step: 0.1 }}
               doubleClick={{ mode: 'toggle' }}
             >
-              <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh' }}>
                 <div 
                   className="mermaid-fullscreen-content"
                   dangerouslySetInnerHTML={{ __html: svgContent }} 
@@ -239,10 +240,12 @@ export default function Mermaid({ chart }: { chart: string }) {
                display: flex;
                align-items: center;
                justify-content: center;
-               min-width: 50vw;
-               min-height: 20vh;
-               max-width: 95vw;
-               max-height: 95vh;
+               margin: auto;
+               width: max-content;
+               height: max-content;
+               min-width: 300px;
+               max-width: 90vw;
+               max-height: 90vh;
                overflow: hidden;
             }
             .mermaid-fullscreen-content > svg {

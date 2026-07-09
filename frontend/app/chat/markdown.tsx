@@ -178,10 +178,11 @@ function ChatImage({ src, alt }: { src: string; alt: string }) {
               minScale={0.5}
               maxScale={10}
               centerOnInit={true}
+              centerZoomedOut={true}
               wheel={{ step: 0.1 }}
               doubleClick={{ mode: 'toggle' }}
             >
-              <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh' }}>
                 <img
                   src={src}
                   alt={alt || ''}
@@ -193,6 +194,8 @@ function ChatImage({ src, alt }: { src: string; alt: string }) {
                     padding: '10px',
                     borderRadius: '8px',
                     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                    display: 'block',
+                    margin: 'auto'
                   }}
                 />
               </TransformComponent>
