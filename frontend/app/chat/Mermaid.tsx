@@ -16,7 +16,12 @@ mermaid.initialize({
 function fixMermaidSyntax(code: string): string {
   let fixed = code.trim();
 
-  // 0. Sửa lỗi dính chữ (thiếu xuống dòng trước participant hoặc Note do LLM quên \n)
+  // 0. Sửa lỗi LLM gõ nhầm "sequence" thay vì "sequenceDiagram"
+  if (/^sequence\b/i.test(fixed) && !/^sequenceDiagram/i.test(fixed)) {
+    fixed = fixed.replace(/^sequence\b/i, 'sequenceDiagram');
+  }
+
+  // Sửa lỗi dính chữ (thiếu xuống dòng trước participant hoặc Note do LLM quên \n)
   // Fix đặc trị cho các ca: "autonumberparticipant", "tạo thanh toánNote over", "AReqNote left of"
   fixed = fixed.replace(/autonumberparticipant/g, 'autonumber\nparticipant');
   fixed = fixed.replace(/([^\n\s])(participant )/g, '$1\n$2');
@@ -169,12 +174,44 @@ export default function Mermaid({ chart }: { chart: string }) {
 
       {isFullscreen && (
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center" 
-          style={{ background: 'rgba(0,0,0,0.85)' }}
+          className="fixed inset-0 flex items-center justify-center" 
+          style={{ background: 'rgba(0,0,0,0.85)', zIndex: 99999 }}
+          onClick={(e) => {
+            // Đóng nếu không click vào nội dung SVG
+            if (!(e.target as HTMLElement).closest('.mermaid-fullscreen-content')) {
+              setIsFullscreen(false);
+              setIsZoomed(false);
+            }
+          }}
         >
-          {/* Nút Close hiển thị rõ ràng */}
+          <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none" style={{ zIndex: 100000 }}>
+            <div className="bg-black/80 text-white/90 text-sm px-4 py-2 rounded-full backdrop-blur-sm pointer-events-auto shadow-lg">
+               Cuộn chuột để Zoom • Kéo để di chuyển • Nhấp đúp để phóng to/thu nhỏ
+            </div>
+          </div>
+
+          <div className="w-full h-full flex items-center justify-center">
+            <TransformWrapper
+              initialScale={1}
+              minScale={0.1}
+              maxScale={10}
+              centerOnInit={true}
+              wheel={{ step: 0.1 }}
+              doubleClick={{ mode: 'toggle' }}
+            >
+              <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div 
+                  className="mermaid-fullscreen-content"
+                  dangerouslySetInnerHTML={{ __html: svgContent }} 
+                />
+              </TransformComponent>
+            </TransformWrapper>
+          </div>
+
+          {/* Đưa nút Close xuống cuối cùng để nổi lên trên cùng, thêm style inline zIndex */}
           <button
-            className="absolute top-4 right-4 z-[10000] flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white text-2xl hover:bg-black/90 transition-colors"
+            className="absolute top-4 right-4 flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white text-2xl hover:bg-black/90 transition-colors"
+            style={{ zIndex: 100000, cursor: 'pointer' }}
             onClick={(e) => { 
               e.preventDefault(); 
               e.stopPropagation(); 
@@ -184,39 +221,6 @@ export default function Mermaid({ chart }: { chart: string }) {
           >
             ✕
           </button>
-
-          <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-[10000]">
-            <div className="bg-black/80 text-white/90 text-sm px-4 py-2 rounded-full backdrop-blur-sm pointer-events-auto shadow-lg">
-               Cuộn chuột để Zoom • Kéo để di chuyển • Nhấp đúp để phóng to/thu nhỏ
-            </div>
-          </div>
-
-          <div 
-            className="w-full h-full flex items-center justify-center" 
-            onClick={(e) => {
-              // Nếu click thẳng vào background (không phải SVG), thì đóng
-              if (e.target === e.currentTarget) {
-                setIsFullscreen(false);
-                setIsZoomed(false);
-              }
-            }}
-          >
-            <TransformWrapper
-              initialScale={1}
-              minScale={0.1}
-              maxScale={10}
-              centerOnInit={true}
-              wheel={{ step: 0.1 }}
-              doubleClick={{ mode: 'toggle' }}
-            >
-              <TransformComponent wrapperStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div 
-                  className="mermaid-fullscreen-content"
-                  dangerouslySetInnerHTML={{ __html: svgContent }} 
-                />
-              </TransformComponent>
-            </TransformWrapper>
-          </div>
           
           <style dangerouslySetInnerHTML={{
             __html: `
@@ -225,14 +229,21 @@ export default function Mermaid({ chart }: { chart: string }) {
                padding: 24px;
                border-radius: 12px;
                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-               display: inline-block;
+               display: flex;
+               align-items: center;
+               justify-content: center;
+               min-width: 50vw;
+               min-height: 20vh;
+               max-width: 95vw;
+               max-height: 95vh;
+               overflow: hidden;
             }
             .mermaid-fullscreen-content > svg {
-               /* Allow SVG to take its intrinsic size or scale, but not blow up automatically */
-               max-width: 90vw;
-               max-height: 90vh;
                width: 100%;
-               height: auto;
+               height: 100%;
+               max-width: 100%;
+               max-height: 100%;
+               object-fit: contain;
             }
           `}} />
         </div>
