@@ -157,7 +157,7 @@ export default function Mermaid({ chart }: { chart: string }) {
         }
       } catch (error: any) {
         // While streaming, syntax errors are expected. Don't crash, just show raw or wait.
-        console.warn('Mermaid render error (likely streaming incomplete):', error?.message || error)
+        // We do not console.warn here anymore to keep the browser console clean during streaming.
         if (!svgContent && ref.current) {
           // Show raw text temporarily while it's building or if it fails completely
           ref.current.innerHTML = `<pre class="text-xs text-gray-400 overflow-hidden">${chart}</pre>`
