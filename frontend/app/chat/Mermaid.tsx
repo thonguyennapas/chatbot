@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import mermaid from 'mermaid'
 import dynamic from 'next/dynamic'
 
@@ -178,7 +179,7 @@ export default function Mermaid({ chart }: { chart: string }) {
         className="mermaid my-4 flex justify-center overflow-x-auto rounded-lg bg-white p-4 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:shadow-md transition-shadow"
       />
 
-      {isFullscreen && (
+      {isFullscreen && typeof document !== 'undefined' && createPortal(
         <div 
           className="fixed inset-0 flex items-center justify-center" 
           style={{ background: 'rgba(0,0,0,0.85)', zIndex: 99999 }}
@@ -252,7 +253,8 @@ export default function Mermaid({ chart }: { chart: string }) {
                object-fit: contain;
             }
           `}} />
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )

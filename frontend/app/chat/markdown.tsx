@@ -1,4 +1,5 @@
 import React from 'react'
+import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import dynamic from 'next/dynamic'
@@ -154,38 +155,24 @@ function ChatImage({ src, alt }: { src: string; alt: string }) {
         )}
       </figure>
 
-      {isFullscreen && (
+      {isFullscreen && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center" 
-          style={{ background: 'rgba(0,0,0,0.85)' }}
+          className="fixed inset-0 flex items-center justify-center" 
+          style={{ background: 'rgba(0,0,0,0.85)', zIndex: 99999 }}
+          onClick={(e) => {
+            if (!(e.target as HTMLElement).closest('img')) {
+              setIsFullscreen(false);
+              setIsZoomed(false);
+            }
+          }}
         >
-          <button
-            className="absolute top-4 right-4 z-[10000] flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white text-2xl hover:bg-black/90 transition-colors"
-            onClick={(e) => { 
-              e.preventDefault(); 
-              e.stopPropagation(); 
-              setIsFullscreen(false); 
-              setIsZoomed(false); 
-            }}
-          >
-            ✕
-          </button>
-
-          <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-[10000]">
+          <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none" style={{ zIndex: 100000 }}>
             <div className="bg-black/80 text-white/90 text-sm px-4 py-2 rounded-full backdrop-blur-sm pointer-events-auto shadow-lg">
                Cuộn chuột để Zoom • Kéo để di chuyển • Nhấp đúp để phóng to/thu nhỏ
             </div>
           </div>
 
-          <div 
-            className="w-full h-full flex items-center justify-center" 
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setIsFullscreen(false);
-                setIsZoomed(false);
-              }
-            }}
-          >
+          <div className="w-full h-full flex items-center justify-center">
             <TransformWrapper
               initialScale={1}
               minScale={0.5}
@@ -194,7 +181,7 @@ function ChatImage({ src, alt }: { src: string; alt: string }) {
               wheel={{ step: 0.1 }}
               doubleClick={{ mode: 'toggle' }}
             >
-              <TransformComponent wrapperStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <img
                   src={src}
                   alt={alt || ''}
@@ -211,7 +198,21 @@ function ChatImage({ src, alt }: { src: string; alt: string }) {
               </TransformComponent>
             </TransformWrapper>
           </div>
-        </div>
+
+          <button
+            className="absolute top-4 right-4 flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white text-2xl hover:bg-black/90 transition-colors"
+            style={{ zIndex: 100000, cursor: 'pointer' }}
+            onClick={(e) => { 
+              e.preventDefault(); 
+              e.stopPropagation(); 
+              setIsFullscreen(false); 
+              setIsZoomed(false); 
+            }}
+          >
+            ✕
+          </button>
+        </div>,
+        document.body
       )}
     </>
   )
