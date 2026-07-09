@@ -142,7 +142,7 @@ function ChatImage({ src, alt }: { src: string; alt: string }) {
           className="max-w-full rounded-lg border shadow-sm transition-shadow hover:shadow-md"
           style={{
             borderColor: 'var(--border-color)',
-            cursor: 'pointer',
+            cursor: 'zoom-in',
             maxHeight: '400px',
             objectFit: 'contain',
           }}
@@ -155,46 +155,62 @@ function ChatImage({ src, alt }: { src: string; alt: string }) {
       </figure>
 
       {isFullscreen && (
-        <div
-          className="fixed inset-0 z-[9999]"
-          style={{ background: 'rgba(0, 0, 0, 0.85)' }}
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center" 
+          style={{ background: 'rgba(0,0,0,0.85)' }}
         >
           <button
-            className="absolute top-4 right-4 z-[10000] flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white text-xl hover:bg-black/70"
-            onClick={(e) => { e.stopPropagation(); setIsFullscreen(false); setIsZoomed(false); }}
+            className="absolute top-4 right-4 z-[10000] flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white text-2xl hover:bg-black/90 transition-colors"
+            onClick={(e) => { 
+              e.preventDefault(); 
+              e.stopPropagation(); 
+              setIsFullscreen(false); 
+              setIsZoomed(false); 
+            }}
           >
             ✕
           </button>
 
           <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-[10000]">
-            <div className="bg-black/60 text-white/90 text-sm px-4 py-2 rounded-full backdrop-blur-sm pointer-events-auto shadow-lg">
-               Cuộn chuột để Zoom • Kéo để di chuyển
+            <div className="bg-black/80 text-white/90 text-sm px-4 py-2 rounded-full backdrop-blur-sm pointer-events-auto shadow-lg">
+               Cuộn chuột để Zoom • Kéo để di chuyển • Nhấp đúp để phóng to/thu nhỏ
             </div>
           </div>
 
-          <TransformWrapper
-            initialScale={1}
-            minScale={0.5}
-            maxScale={10}
-            centerOnInit={true}
-            wheel={{ step: 0.1 }}
+          <div 
+            className="w-full h-full flex items-center justify-center" 
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setIsFullscreen(false);
+                setIsZoomed(false);
+              }
+            }}
           >
-            <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img
-                src={src}
-                alt={alt || ''}
-                style={{ 
-                  maxWidth: '90vw', 
-                  maxHeight: '90vh',
-                  objectFit: 'contain',
-                  backgroundColor: 'white',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                }}
-              />
-            </TransformComponent>
-          </TransformWrapper>
+            <TransformWrapper
+              initialScale={1}
+              minScale={0.5}
+              maxScale={10}
+              centerOnInit={true}
+              wheel={{ step: 0.1 }}
+              doubleClick={{ mode: 'toggle' }}
+            >
+              <TransformComponent wrapperStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img
+                  src={src}
+                  alt={alt || ''}
+                  style={{ 
+                    maxWidth: '90vw', 
+                    maxHeight: '90vh',
+                    objectFit: 'contain',
+                    backgroundColor: 'white',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                  }}
+                />
+              </TransformComponent>
+            </TransformWrapper>
+          </div>
         </div>
       )}
     </>

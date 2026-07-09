@@ -160,71 +160,63 @@ export default function Mermaid({ chart }: { chart: string }) {
     <>
       <div 
         ref={ref} 
-        onClick={(e) => { 
-          if (isFullscreen) {
-             // Clicking background closes. Clicking SVG toggles zoom.
-             if (e.target === e.currentTarget) {
-                 setIsFullscreen(false);
-                 setIsZoomed(false);
-             } else {
-                 setIsZoomed(!isZoomed);
-             }
-          } else {
-             if (svgContent) setIsFullscreen(true);
-          }
+        onClick={() => { 
+           if (svgContent) setIsFullscreen(true);
         }}
-        style={{ 
-          ...(isFullscreen ? {
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 9999,
-            backgroundColor: 'rgba(0,0,0,0.85)',
-            display: 'flex', // Flex container for margin auto
-            overflow: 'auto',
-            margin: 0,
-            maxWidth: 'none',
-            borderRadius: 0,
-            border: 'none',
-            cursor: isZoomed ? 'zoom-out' : 'zoom-in',
-          } : {
-            cursor: svgContent ? 'zoom-in' : 'default',
-          })
-        }}
-        className={!isFullscreen ? 'mermaid my-4 flex justify-center overflow-x-auto rounded-lg bg-white p-4 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:shadow-md transition-shadow' : 'mermaid-fullscreen'}
+        style={{ cursor: svgContent ? 'zoom-in' : 'default' }}
+        className="mermaid my-4 flex justify-center overflow-x-auto rounded-lg bg-white p-4 shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:shadow-md transition-shadow"
       />
 
       {isFullscreen && (
-        <div className="fixed inset-0 z-[9999]" style={{ background: 'rgba(0,0,0,0.85)' }}>
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center" 
+          style={{ background: 'rgba(0,0,0,0.85)' }}
+        >
+          {/* Nút Close hiển thị rõ ràng */}
           <button
-            className="absolute top-4 right-4 z-[10000] flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white text-xl hover:bg-black/70"
-            onClick={(e) => { e.stopPropagation(); setIsFullscreen(false); setIsZoomed(false); }}
+            className="absolute top-4 right-4 z-[10000] flex h-12 w-12 items-center justify-center rounded-full bg-black/60 text-white text-2xl hover:bg-black/90 transition-colors"
+            onClick={(e) => { 
+              e.preventDefault(); 
+              e.stopPropagation(); 
+              setIsFullscreen(false); 
+              setIsZoomed(false); 
+            }}
           >
             ✕
           </button>
 
           <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none z-[10000]">
-            <div className="bg-black/60 text-white/90 text-sm px-4 py-2 rounded-full backdrop-blur-sm pointer-events-auto shadow-lg">
-               Cuộn chuột để Zoom • Kéo để di chuyển
+            <div className="bg-black/80 text-white/90 text-sm px-4 py-2 rounded-full backdrop-blur-sm pointer-events-auto shadow-lg">
+               Cuộn chuột để Zoom • Kéo để di chuyển • Nhấp đúp để phóng to/thu nhỏ
             </div>
           </div>
 
-          <TransformWrapper
-            initialScale={1}
-            minScale={0.2}
-            maxScale={10}
-            centerOnInit={true}
-            wheel={{ step: 0.1 }}
+          <div 
+            className="w-full h-full flex items-center justify-center" 
+            onClick={(e) => {
+              // Nếu click thẳng vào background (không phải SVG), thì đóng
+              if (e.target === e.currentTarget) {
+                setIsFullscreen(false);
+                setIsZoomed(false);
+              }
+            }}
           >
-            <TransformComponent wrapperStyle={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div 
-                className="mermaid-fullscreen-content"
-                dangerouslySetInnerHTML={{ __html: svgContent }} 
-              />
-            </TransformComponent>
-          </TransformWrapper>
+            <TransformWrapper
+              initialScale={1}
+              minScale={0.1}
+              maxScale={10}
+              centerOnInit={true}
+              wheel={{ step: 0.1 }}
+              doubleClick={{ mode: 'toggle' }}
+            >
+              <TransformComponent wrapperStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div 
+                  className="mermaid-fullscreen-content"
+                  dangerouslySetInnerHTML={{ __html: svgContent }} 
+                />
+              </TransformComponent>
+            </TransformWrapper>
+          </div>
           
           <style dangerouslySetInnerHTML={{
             __html: `
@@ -233,9 +225,10 @@ export default function Mermaid({ chart }: { chart: string }) {
                padding: 24px;
                border-radius: 12px;
                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+               display: inline-block;
             }
             .mermaid-fullscreen-content > svg {
-               /* Remove explicit max-width so the zoomer can scale it freely */
+               /* Allow SVG to take its intrinsic size or scale, but not blow up automatically */
                max-width: 90vw;
                max-height: 90vh;
                width: 100%;
