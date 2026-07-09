@@ -143,7 +143,13 @@ export default function Mermaid({ chart }: { chart: string }) {
       try {
         const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`
         const safeChart = fixMermaidSyntax(chart)
-        const { svg } = await mermaid.render(id, safeChart)
+        let { svg } = await mermaid.render(id, safeChart)
+        
+        // Fix console warning: "Unexpected value NaN parsing viewBox attribute" during streaming
+        if (svg.includes('NaN')) {
+           svg = svg.replace(/viewBox="[^"]*NaN[^"]*"/g, 'viewBox="0 0 0 0"');
+        }
+
         setSvgContent(svg)
         if (ref.current) {
           ref.current.innerHTML = svg
